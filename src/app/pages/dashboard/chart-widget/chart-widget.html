@@ -1,0 +1,9 @@
+<div class="h-full flex flex-col">
+    <div class="flex items-center justify-between mb-4">
+        <h4 class="text-sm font-bold text-slate-600">{{ title }}</h4>
+    </div>
+    <div class="flex-1 min-h-[180px] relative">
+        <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="type">
+        </canvas>
+    </div>
+</div>

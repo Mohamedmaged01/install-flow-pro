@@ -1,0 +1,107 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">أوامر التركيب</h2>
+            <p class="text-slate-400 text-sm mt-1">إدارة ومتابعة جميع أوامر التركيب</p>
+        </div>
+        <button (click)="loadOrders()"
+            class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white/80 border border-slate-200 hover:bg-slate-50 transition-colors">
+            <lucide-icon [name]="RefreshCw" class="size-4"></lucide-icon>
+            تحديث
+        </button>
+    </div>
+
+    <!-- Status Filters -->
+    <div class="flex flex-wrap items-center gap-2">
+        <button (click)="statusFilter = 'all'"
+            [class]="statusFilter === 'all' ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-md' : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            الكل ({{ statusCounts['all'] }})
+        </button>
+        @for (status of filterStatuses; track status) {
+        <button (click)="statusFilter = status"
+            [class]="statusFilter === status ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-md' : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-white/80 text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            {{ STATUS_LABEL_MAP[status] }} ({{ statusCounts[status] }})
+        </button>
+        }
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/50 overflow-hidden">
+        <!-- Search -->
+        <div class="p-4 border-b border-slate-100/50">
+            <div class="relative max-w-md">
+                <lucide-icon [name]="Search"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 size-4"></lucide-icon>
+                <input type="text" [value]="searchQuery" (input)="searchQuery = $any($event.target).value"
+                    placeholder="بحث عن أمر (رقم، عميل، مدينة)..."
+                    class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all">
+            </div>
+        </div>
+
+        @if (isLoading) {
+        <div class="flex justify-center py-12">
+            <div class="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+        } @else {
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-right">
+                <thead class="bg-slate-50/80 text-slate-500 text-xs font-bold">
+                    <tr>
+                        <th class="px-6 py-3.5">رقم الأمر</th>
+                        <th class="px-6 py-3.5">رقم العميل</th>
+                        <th class="px-6 py-3.5">المدينة</th>
+                        <th class="px-6 py-3.5">الفرع/القسم</th>
+                        <th class="px-6 py-3.5">الحالة</th>
+                        <th class="px-6 py-3.5">الموعد</th>
+                        <th class="px-6 py-3.5">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    @for (order of filteredOrders; track order.id) {
+                    <tr class="hover:bg-blue-50/30 transition-colors group cursor-pointer"
+                        (click)="viewOrder(order.id)">
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-bold text-blue-600 text-sm">#{{ order.id }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-800 text-sm">{{ order.customerId || '—' }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ order.quotationId || order.invoiceId || '' }}
+                            </p>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">{{ order.city }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">#{{ order.branchId }} / #{{ order.departmentId }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <app-status-badge [status]="order.status"></app-status-badge>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ order.scheduledDate ?
+                            order.scheduledDate.split('T')[0] : '—' }}</td>
+                        <td class="px-6 py-4">
+                            <button
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors opacity-0 group-hover:opacity-100">
+                                <lucide-icon [name]="Eye" class="size-3.5"></lucide-icon>
+                                عرض
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (filteredOrders.length === 0) {
+        <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+            <lucide-icon [name]="FileText" class="size-12 mb-4 opacity-50"></lucide-icon>
+            <p class="font-medium">لا توجد أوامر تركيب</p>
+        </div>
+        }
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-100/50 text-sm text-slate-400 flex items-center justify-between">
+            <span>عرض {{ filteredOrders.length }} من أصل {{ allOrders.length }} سجل</span>
+        </div>
+        }
+    </div>
+</div>

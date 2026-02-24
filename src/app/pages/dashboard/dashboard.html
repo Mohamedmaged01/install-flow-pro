@@ -1,0 +1,66 @@
+<div class="space-y-6">
+    <!-- Page Welcome -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">مرحباً، {{ auth.isLoggedIn() ?
+                auth.userName() : 'زائر' }} 👋</h2>
+            <p class="text-slate-400 text-sm mt-1">إليك ملخص نشاط أوامر التركيب الخاصة بك</p>
+        </div>
+        <div class="hidden md:flex items-center gap-2 text-sm text-slate-400">
+            <lucide-icon [name]="CalendarIcon" class="size-4"></lucide-icon>
+            <span>{{ today }}</span>
+        </div>
+    </div>
+
+    <!-- Stat Cards Row -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <app-stat-card label="إجمالي الأوامر" [value]="'' + totalOrders" icon="clipboard-list"
+            color="blue"></app-stat-card>
+        <app-stat-card label="بانتظار الاعتماد" [value]="'' + pendingOrders" icon="clock"
+            color="yellow"></app-stat-card>
+        <app-stat-card label="قيد التنفيذ" [value]="'' + inProgressOrders" icon="wrench" color="indigo"></app-stat-card>
+        <app-stat-card label="مكتملة" [value]="'' + completedOrders" icon="check-circle" color="green"></app-stat-card>
+        <app-stat-card label="عاجلة" [value]="'' + urgentOrders" icon="alert-triangle" color="red"></app-stat-card>
+    </div>
+
+    <!-- Action Cards Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <app-action-card title="المستندات" subtitle="عروض الأسعار والفواتير" icon="file-text"
+            route="/documents"></app-action-card>
+        <app-action-card title="أوامر التركيب" subtitle="إدارة ومتابعة الأوامر" icon="clipboard-list"
+            route="/jobs"></app-action-card>
+        <app-action-card title="مسح QR" subtitle="تأكيد إنهاء التركيب" icon="qr-code"
+            route="/scan-qr"></app-action-card>
+    </div>
+
+    <!-- Charts & Recent Orders Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Charts Section (Span 2) -->
+        <div class="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-slate-800">إحصائيات الأداء</h3>
+                <div class="flex items-center gap-1 bg-slate-50 rounded-lg p-1">
+                    <button
+                        class="px-3 py-1.5 text-xs font-medium rounded-md bg-white shadow-sm text-blue-600">أسبوعي</button>
+                    <button
+                        class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-slate-600 transition-colors">شهري</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Doughnut Chart -->
+                <app-chart-widget type="doughnut" title="توزيع حسب القسم"></app-chart-widget>
+                <!-- Bar Chart -->
+                <app-chart-widget type="bar" title="توزيع حسب الحالة"></app-chart-widget>
+            </div>
+
+            <div class="mt-6 border-t border-slate-100/50 pt-6">
+                <app-chart-widget type="line" title="الأوامر خلال آخر 7 أيام"></app-chart-widget>
+            </div>
+        </div>
+
+        <!-- Recent Orders (Span 1) -->
+        <div class="lg:col-span-1">
+            <app-recent-orders></app-recent-orders>
+        </div>
+    </div>
+</div>

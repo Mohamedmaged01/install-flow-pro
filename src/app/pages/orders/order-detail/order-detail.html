@@ -1,0 +1,309 @@
+<div class="space-y-6">
+    <!-- Back + Header -->
+    <div class="flex items-center gap-4">
+        <button (click)="goBack()"
+            class="w-10 h-10 rounded-xl bg-white/80 border border-slate-100/50 flex items-center justify-center hover:bg-slate-50 transition-colors">
+            <lucide-icon [name]="ArrowRight" class="size-5 text-slate-500"></lucide-icon>
+        </button>
+        @if (order) {
+        <div class="flex-1">
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">أمر #{{ order.id }}</h2>
+                <app-status-badge [status]="order.status"></app-status-badge>
+            </div>
+            <p class="text-sm text-slate-400 mt-0.5">عميل: {{ order.customerId }} • عرض سعر: {{ order.quotationId }}</p>
+        </div>
+        }
+    </div>
+
+    @if (isLoading) {
+    <div class="flex justify-center py-16">
+        <div class="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+    }
+
+    @if (order) {
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-4">
+            <!-- Order Details -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <lucide-icon [name]="UserIcon" class="size-4 text-blue-600"></lucide-icon>
+                            بيانات العميل
+                        </h3>
+                        <div class="space-y-2 text-sm text-slate-600">
+                            <p><span class="font-bold text-slate-700">رقم العميل:</span> {{ order.customerId }}</p>
+                            <p><span class="font-bold text-slate-700">رقم الفاتورة:</span> {{ order.invoiceId || '—' }}
+                            </p>
+                            <p><span class="font-bold text-slate-700">عرض السعر:</span> {{ order.quotationId || '—' }}
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <lucide-icon [name]="MapPin" class="size-4 text-blue-600"></lucide-icon>
+                            موقع التركيب
+                        </h3>
+                        <div class="space-y-2 text-sm text-slate-600">
+                            <p class="font-bold text-slate-900">{{ order.city }}</p>
+                            <p>{{ order.address }}</p>
+                            @if (order.scheduledDate) {
+                            <div class="flex items-center gap-2 text-slate-500">
+                                <lucide-icon [name]="Clock" class="size-4"></lucide-icon>
+                                {{ order.scheduledDate.split('T')[0] }}
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Section -->
+            @if (order.qrToken) {
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <lucide-icon [name]="QrCode" class="size-4 text-blue-600"></lucide-icon>
+                    رمز QR
+                </h3>
+                <div class="flex items-center gap-6">
+                    <div
+                        class="w-36 h-36 bg-white rounded-2xl flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden">
+                        @if (qrImageUrl) {
+                        <img [src]="qrImageUrl" alt="QR Code" class="w-full h-full object-contain">
+                        } @else {
+                        <lucide-icon [name]="QrCode" class="size-10 text-slate-400"></lucide-icon>
+                        }
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <p><span class="font-bold text-slate-700">رمز التحقق:</span> <span
+                                class="font-mono text-blue-600">{{ order.qrToken }}</span></p>
+                        <p class="text-xs text-slate-400">يُرسل رمز QR للعميل عبر البريد والواتساب</p>
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- Tasks -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-800">المهام المُسندة</h3>
+                    <button (click)="openAssignModal()"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <lucide-icon [name]="UserPlus" class="size-3.5"></lucide-icon>
+                        تعيين فني
+                    </button>
+                </div>
+                @if (tasks.length === 0) {
+                <p class="text-sm text-slate-400 text-center py-4">لا توجد مهام مسندة لهذا الأمر</p>
+                }
+                <div class="space-y-3">
+                    @for (task of tasks; track task.id) {
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">فني: {{ task.technicianName }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ task.createdAt.split('T')[0] }}</p>
+                            @if (task.notes) {
+                            <p class="text-xs text-slate-500 mt-1">{{ task.notes }}</p>
+                            }
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-700">{{
+                                task.status }}</span>
+                            <button (click)="openStatusModal(task)"
+                                class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-colors">
+                                تحديث
+                            </button>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Evidence Upload -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-800">رفع الأدلة والصور</h3>
+                    <button (click)="openEvidenceModal()"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <lucide-icon [name]="Upload" class="size-3.5"></lucide-icon>
+                        رفع أدلة
+                    </button>
+                </div>
+                <p class="text-sm text-slate-400">ارفع صور الإنجاز وتقارير التركيب لهذا الأمر</p>
+            </div>
+
+            <!-- History / Timeline -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-6">سجل التتبع</h3>
+                @if (history.length === 0) {
+                <p class="text-sm text-slate-400 text-center py-4">لا يوجد سجل للأمر</p>
+                }
+                <div class="relative">
+                    <div class="absolute right-4 top-0 bottom-0 w-0.5 bg-slate-100"></div>
+                    <div class="space-y-6">
+                        @for (entry of history; track entry.id) {
+                        <div class="flex gap-4 relative">
+                            <div
+                                class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 z-10 border-2 border-white">
+                                <lucide-icon [name]="Clock" class="size-3.5"></lucide-icon>
+                            </div>
+                            <div class="flex-1 pb-2">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-bold text-slate-800">{{ entry.action }}</h4>
+                                    <span class="text-xs text-slate-400">{{ getTimeAgo(entry.timestamp) }}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">بواسطة: {{ entry.userName }} ({{ entry.userRole
+                                    }})</p>
+                                @if (entry.notes) {
+                                <p
+                                    class="text-xs text-slate-500 mt-1 bg-slate-50 rounded-lg px-3 py-1.5 whitespace-pre-line">
+                                    {{ entry.notes }}</p>
+                                }
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-4">
+            <!-- Order Info -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-4">معلومات الأمر</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between"><span class="text-slate-500">رقم الأمر</span><span
+                            class="font-bold text-slate-800 font-mono">#{{ order.id }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">الحالة</span><span
+                            class="font-bold text-slate-800">{{ STATUS_LABELS[order.status] }}</span>
+                    </div>
+                    <div class="flex justify-between"><span class="text-slate-500">الفرع</span><span
+                            class="font-bold text-slate-800">#{{ order.branchId }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">القسم</span><span
+                            class="font-bold text-slate-800">#{{ order.departmentId }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">المدينة</span><span
+                            class="font-bold text-slate-800">{{ order.city }}</span></div>
+                    @if (order.scheduledDate) {
+                    <div class="flex justify-between"><span class="text-slate-500">الموعد</span><span
+                            class="font-bold text-slate-800">{{ order.scheduledDate.split('T')[0] }}</span></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Modal -->
+    @if (showAssignModal) {
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showAssignModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">تعيين فني</h3>
+            @if (availableTechnicians.length === 0) {
+            <p class="text-sm text-slate-400 text-center py-4">لا يوجد فنيون متاحون في هذا القسم</p>
+            }
+            <div class="space-y-2 mb-4">
+                @for (tech of availableTechnicians; track tech.id) {
+                <button (click)="selectedTechId = tech.id"
+                    [class]="selectedTechId === tech.id ? 'w-full flex items-center gap-3 p-3 rounded-xl border-2 border-blue-500 bg-blue-50 transition-all cursor-pointer' : 'w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all cursor-pointer'">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+                        {{ tech.name.charAt(0) }}
+                    </div>
+                    <p class="font-bold text-slate-800 text-sm">{{ tech.name }}</p>
+                </button>
+                }
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات</label>
+                <textarea [(ngModel)]="assignNotes" rows="2" placeholder="ملاحظات للفني..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 resize-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button (click)="assignTechnician()" [disabled]="!selectedTechId || isSubmitting"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 disabled:opacity-50 transition-all cursor-pointer">
+                    تعيين
+                </button>
+                <button (click)="showAssignModal = false"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Task Status Modal -->
+    @if (showStatusModal && activeTask) {
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showStatusModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">تحديث حالة المهمة</h3>
+            <p class="text-sm text-slate-500 mb-4">فني: <span class="font-bold">{{ activeTask.technicianName }}</span>
+            </p>
+            <div class="space-y-2 mb-4">
+                @for (status of availableNextStatuses; track status) {
+                <button (click)="newTaskStatus = status"
+                    [class]="newTaskStatus === status ? 'w-full text-right p-3 rounded-xl border-2 border-blue-500 bg-blue-50 text-sm font-bold text-blue-700 cursor-pointer' : 'w-full text-right p-3 rounded-xl border border-slate-200 text-sm text-slate-600 hover:border-blue-300 cursor-pointer'">
+                    {{ status }}
+                </button>
+                }
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات</label>
+                <textarea [(ngModel)]="taskStatusNote" rows="2" placeholder="ملاحظات..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 resize-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button (click)="submitTaskStatus()" [disabled]="isSubmitting"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 disabled:opacity-50 transition-all cursor-pointer">
+                    تحديث
+                </button>
+                <button (click)="showStatusModal = false"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- Evidence Modal -->
+    @if (showEvidenceModal) {
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showEvidenceModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">رفع الأدلة</h3>
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-600 mb-1">الصور والأدلة</label>
+                <input type="file" multiple accept="image/*" (change)="onFilesSelected($event)"
+                    class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                @if (evidenceFiles.length > 0) {
+                <p class="text-xs text-blue-600 mt-1">{{ evidenceFiles.length }} ملف مختار</p>
+                }
+            </div>
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات</label>
+                <textarea [(ngModel)]="evidenceNote" rows="3" placeholder="أضف ملاحظات عن الأدلة..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 resize-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button (click)="submitEvidence()" [disabled]="isSubmitting"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-700 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2">
+                    <lucide-icon [name]="Upload" class="size-4"></lucide-icon>
+                    رفع
+                </button>
+                <button (click)="showEvidenceModal = false"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    }
+</div>

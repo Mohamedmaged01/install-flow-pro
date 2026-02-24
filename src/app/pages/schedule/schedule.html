@@ -1,0 +1,89 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">المهام والجدول</h2>
+        <p class="text-slate-400 text-sm mt-1">مهام التركيب المسندة إليك</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2">
+        <button (click)="activeTab = 'all'"
+            [class]="activeTab === 'all' ? 'px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            جميع المهام ({{ allTasks.length }})
+        </button>
+        <button (click)="activeTab = 'in_progress'"
+            [class]="activeTab === 'in_progress' ? 'px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            قيد التنفيذ
+        </button>
+        <button (click)="activeTab = 'pending'"
+            [class]="activeTab === 'pending' ? 'px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            بانتظار البدء
+        </button>
+        <button (click)="activeTab = 'completed'"
+            [class]="activeTab === 'completed' ? 'px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            المكتملة
+        </button>
+    </div>
+
+    @if (isLoading) {
+    <div class="flex justify-center py-12">
+        <div class="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+    } @else {
+    <!-- Task Cards -->
+    <div class="space-y-4">
+        @for (task of tasks; track task.id) {
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-slate-100/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer"
+            (click)="viewOrder(task.orderId)">
+            <div class="flex items-start gap-4">
+                <!-- Icon -->
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
+                    <lucide-icon [name]="Calendar" class="size-6 text-blue-500"></lucide-icon>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-900">أمر #{{ task.orderId }}</h3>
+                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold"
+                                    [class]="getStatusColor(task.status)">
+                                    {{ getStatusLabel(task.status) }}
+                                </span>
+                            </div>
+                            <p class="text-slate-500 text-sm mt-0.5">فني: {{ task.technicianName }}</p>
+                        </div>
+                        <button
+                            class="text-slate-300 hover:text-slate-600 transition-colors opacity-0 group-hover:opacity-100">
+                            <lucide-icon [name]="MoreVertical" class="size-5"></lucide-icon>
+                        </button>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="flex flex-wrap gap-4 mt-3 text-sm text-slate-500">
+                        <div class="flex items-center gap-1.5">
+                            <lucide-icon [name]="Clock" class="size-4 text-slate-400"></lucide-icon>
+                            <span>أنشئت: {{ task.createdAt.split('T')[0] }}</span>
+                        </div>
+                        @if (task.notes) {
+                        <div class="flex items-center gap-1.5">
+                            <lucide-icon [name]="MapPin" class="size-4 text-slate-400"></lucide-icon>
+                            <span>{{ task.notes }}</span>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+
+        @if (tasks.length === 0) {
+        <div class="flex flex-col items-center justify-center py-20 text-slate-400">
+            <lucide-icon [name]="Calendar" class="size-12 mb-4 opacity-50"></lucide-icon>
+            <p class="font-medium">لا توجد مهام في هذه القائمة</p>
+        </div>
+        }
+    </div>
+    }
+</div>

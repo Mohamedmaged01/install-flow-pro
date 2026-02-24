@@ -1,0 +1,48 @@
+<aside
+    class="w-64 bg-white/80 backdrop-blur-xl border-l border-slate-200/50 flex flex-col h-screen sticky top-0 shrink-0">
+    <!-- Brand -->
+    <div class="p-6 bg-gradient-to-bl from-blue-600 to-indigo-700 text-white relative overflow-hidden">
+        <div class="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/10"></div>
+        <div class="absolute bottom-0 right-0 w-16 h-16 rounded-full bg-white/5"></div>
+        <h1 class="text-xl font-extrabold relative z-10">InstallFlow</h1>
+        <p class="text-blue-200 text-xs mt-1 relative z-10">نظام إدارة أوامر التركيب</p>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+        @for (item of menuItems; track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
+            class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 group">
+            <lucide-icon [name]="item.icon"
+                class="size-5 group-hover:scale-110 transition-transform duration-200"></lucide-icon>
+            <span>{{ item.label }}</span>
+        </a>
+        }
+    </nav>
+
+    <!-- User Profile -->
+    <div class="p-4 border-t border-slate-100 group">
+        @if (auth.isLoggedIn()) {
+        <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50/50 transition-all cursor-pointer">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold group-hover:scale-105 transition-transform">
+                {{ auth.userName().charAt(0) }}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-800 truncate">{{ auth.userName() }}</p>
+                <p class="text-xs text-slate-400 truncate">{{ auth.roleLabel() }}</p>
+            </div>
+            <button (click)="logout()"
+                class="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                title="تسجيل الخروج">
+                <lucide-icon [name]="LogOut" class="size-4"></lucide-icon>
+            </button>
+        </div>
+        } @else {
+        <a routerLink="/login"
+            class="flex items-center justify-center gap-2 p-3 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors font-bold text-sm">
+            تسجيل الدخول
+        </a>
+        }
+    </div>
+</aside>

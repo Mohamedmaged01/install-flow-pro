@@ -1,0 +1,19 @@
+<a [routerLink]="route"
+    class="block bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50 hover:-translate-y-1 hover:shadow-md hover:bg-white transition-all duration-200 group cursor-pointer">
+    <div class="flex items-center gap-5">
+        <div
+            [class]="'w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-200 ' + bgClass">
+            <lucide-icon [name]="iconName" class="size-7 text-white"></lucide-icon>
+        </div>
+        <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors duration-200">{{
+                title }}</h3>
+            <p class="text-sm text-slate-400 mt-0.5">{{ subtitle }}</p>
+        </div>
+        <div
+            class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-all duration-200">
+            <lucide-icon [name]="ArrowLeft"
+                class="size-4 text-slate-300 group-hover:text-blue-500 group-hover:-translate-x-1 transition-all duration-200"></lucide-icon>
+        </div>
+    </div>
+</a>

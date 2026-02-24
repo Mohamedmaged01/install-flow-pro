@@ -1,0 +1,106 @@
+<div class="space-y-6" dir="rtl">
+    <!-- Header -->
+    <div class="text-center">
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">مسح رمز QR</h2>
+        <p class="text-slate-400 text-sm mt-1">تأكيد إغلاق أمر التركيب</p>
+    </div>
+
+    <div class="max-w-lg mx-auto space-y-6">
+        <!-- Scanner Area -->
+        @if (scanResult === 'idle' || scanResult === 'scanning') {
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-slate-100/50 text-center">
+
+            <!-- Camera Preview -->
+            <div
+                class="w-72 h-72 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center relative overflow-hidden mb-6">
+                @if (cameraActive) {
+                <div id="qr-reader" class="w-full h-full"></div>
+                } @else {
+                <div class="text-center text-white/60">
+                    <lucide-icon [name]="Camera" class="size-16 mx-auto mb-3 opacity-50"></lucide-icon>
+                    <p class="text-sm">اضغط لفتح الكاميرا أو أدخل الرمز يدوياً</p>
+                </div>
+                }
+            </div>
+
+            @if (cameraError) {
+            <div class="mb-4 p-3 bg-red-50 rounded-xl text-sm text-red-700 border border-red-100">
+                {{ cameraError }}
+            </div>
+            }
+
+            <div class="flex gap-3 mb-4">
+                @if (!cameraActive) {
+                <button (click)="startCameraScan()"
+                    class="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md transition-all hover:shadow-lg cursor-pointer">
+                    <lucide-icon [name]="Video" class="size-5"></lucide-icon>
+                    فتح الكاميرا
+                </button>
+                } @else {
+                <button (click)="stopCamera()"
+                    class="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-red-700 bg-red-50 border border-red-200 transition-all hover:bg-red-100 cursor-pointer">
+                    <lucide-icon [name]="VideoOff" class="size-5"></lucide-icon>
+                    إيقاف الكاميرا
+                </button>
+                }
+            </div>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-4 my-6">
+                <div class="flex-1 h-px bg-slate-200"></div>
+                <span class="text-xs text-slate-400 font-medium">أو أدخل الرمز يدوياً</span>
+                <div class="flex-1 h-px bg-slate-200"></div>
+            </div>
+
+            <!-- Manual Input -->
+            <div class="flex gap-3">
+                <input type="text" [(ngModel)]="qrInput" placeholder="مثال: QR-ABC123-XYZ"
+                    class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-mono text-center focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all">
+                <button (click)="manualVerify()" [disabled]="!qrInput.trim()"
+                    class="px-6 py-3 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-all cursor-pointer">
+                    تحقق
+                </button>
+            </div>
+
+
+        </div>
+        }
+
+        <!-- Success -->
+        @if (scanResult === 'success') {
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-emerald-100 text-center">
+            <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                <lucide-icon [name]="CheckCircle" class="size-10 text-emerald-600"></lucide-icon>
+            </div>
+            <h3 class="text-xl font-extrabold text-emerald-700 mb-2">تم التحقق بنجاح!</h3>
+            <p class="text-sm text-slate-600 mb-4">تم إغلاق أمر التركيب <span class="font-bold font-mono">{{
+                    matchedOrderNumber }}</span></p>
+            <div class="flex gap-3 justify-center">
+                <button (click)="viewOrder()"
+                    class="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all cursor-pointer">
+                    عرض الأمر
+                </button>
+                <button (click)="reset()"
+                    class="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer">
+                    مسح آخر
+                </button>
+            </div>
+        </div>
+        }
+
+        <!-- Failed -->
+        @if (scanResult === 'failed') {
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-red-100 text-center">
+            <div class="w-20 h-20 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <lucide-icon [name]="XCircle" class="size-10 text-red-600"></lucide-icon>
+            </div>
+            <h3 class="text-xl font-extrabold text-red-700 mb-2">فشل التحقق</h3>
+            <p class="text-sm text-slate-600 mb-4">الرمز غير صالح أو أمر التركيب ليس بحالة تسمح بالإغلاق</p>
+            <button (click)="reset()"
+                class="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all cursor-pointer">
+                المحاولة مرة أخرى
+            </button>
+        </div>
+        }
+    </div>
+</div>

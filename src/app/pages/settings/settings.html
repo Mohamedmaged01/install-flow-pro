@@ -1,0 +1,462 @@
+<div class="space-y-6">
+    <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">الإعدادات</h2>
+        <p class="text-slate-400 text-sm mt-1">إدارة النظام والتكوين</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 flex-wrap">
+        <button (click)="activeTab = 'branches'"
+            [class]="activeTab === 'branches' ? 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            <lucide-icon [name]="Building" class="size-4"></lucide-icon> الفروع
+        </button>
+        <button (click)="activeTab = 'departments'"
+            [class]="activeTab === 'departments' ? 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            <lucide-icon [name]="Building" class="size-4"></lucide-icon> الأقسام
+        </button>
+        <button (click)="activeTab = 'users'"
+            [class]="activeTab === 'users' ? 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            <lucide-icon [name]="UsersIcon" class="size-4"></lucide-icon> المستخدمين
+        </button>
+        <button (click)="activeTab = 'notifications'"
+            [class]="activeTab === 'notifications' ? 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            <lucide-icon [name]="Bell" class="size-4"></lucide-icon> الإشعارات
+        </button>
+        <button (click)="activeTab = 'sla'"
+            [class]="activeTab === 'sla' ? 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md' : 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/80 text-slate-500 hover:bg-blue-50 border border-slate-100/50 transition-all'">
+            <lucide-icon [name]="ClockIcon" class="size-4"></lucide-icon> SLA
+        </button>
+    </div>
+
+    <!-- ══════════════════════ BRANCHES TAB ══════════════════════ -->
+    @if (activeTab === 'branches') {
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-slate-800">إدارة الفروع</h3>
+            <button (click)="showAddBranch = !showAddBranch"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                <lucide-icon [name]="Plus" class="size-3.5"></lucide-icon> فرع جديد
+            </button>
+        </div>
+
+        @if (showAddBranch) {
+        <div class="p-4 bg-blue-50/50 rounded-xl mb-4 space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">اسم الفرع</label>
+                    <input type="text" [(ngModel)]="newBranch.name" placeholder="مثال: الفرع الرئيسي"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">البريد</label>
+                    <input type="email" [(ngModel)]="newBranch.email" placeholder="email@example.com"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">الهاتف</label>
+                    <input type="tel" [(ngModel)]="newBranch.phone" placeholder="05xxxxxxxx"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400">
+                </div>
+            </div>
+            <button (click)="createBranch()"
+                class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                إنشاء الفرع
+            </button>
+        </div>
+        }
+
+        @if (isLoading) {
+        <div class="flex justify-center py-8">
+            <div class="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+        } @else {
+        <div class="space-y-3">
+            @for (branch of branches; track branch.id) {
+            <div class="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
+                [class]="selectedBranchId === branch.id ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'"
+                (click)="onBranchSelect(branch.id)">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                    {{ branch.name.charAt(0) }}
+                </div>
+                <div class="flex-1">
+                    <p class="font-bold text-slate-800 text-sm">{{ branch.name }}</p>
+                    <p class="text-xs text-slate-400">{{ branch.email }} · {{ branch.phone }}</p>
+                    @if (branch.departmentNames.length > 0) {
+                    <div class="flex gap-1 mt-1 flex-wrap">
+                        @for (dn of branch.departmentNames; track dn) {
+                        <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600">{{ dn
+                            }}</span>
+                        }
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+            @if (branches.length === 0) {
+            <p class="text-center text-sm text-slate-400 py-6">لا توجد فروع</p>
+            }
+        </div>
+        }
+    </div>
+    }
+
+    <!-- ══════════════════════ DEPARTMENTS TAB ══════════════════════ -->
+    @if (activeTab === 'departments') {
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-slate-800">إدارة الأقسام</h3>
+            <div class="flex items-center gap-2">
+                @if (branches.length > 0) {
+                <select [(ngModel)]="selectedBranchId" (ngModelChange)="onBranchSelect($event)"
+                    class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 bg-white focus:outline-none">
+                    @for (b of branches; track b.id) {
+                    <option [ngValue]="b.id">{{ b.name }}</option>
+                    }
+                </select>
+                }
+                <button (click)="showAddDept = !showAddDept"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                    <lucide-icon [name]="Plus" class="size-3.5"></lucide-icon> قسم جديد
+                </button>
+            </div>
+        </div>
+
+        @if (showAddDept) {
+        <div class="p-4 bg-blue-50/50 rounded-xl mb-4 flex gap-3 items-end">
+            <div class="flex-1">
+                <label class="block text-xs font-bold text-slate-500 mb-1">اسم القسم</label>
+                <input type="text" [(ngModel)]="newDeptName" placeholder="مثال: قسم التكييف"
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-blue-400">
+            </div>
+            <button (click)="createDepartment()"
+                class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors whitespace-nowrap">
+                إنشاء القسم
+            </button>
+        </div>
+        }
+
+        <div class="space-y-3">
+            @for (dept of apiDepartments; track dept.id) {
+            <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                <div class="flex-1">
+                    <p class="font-bold text-slate-800 text-sm">{{ dept.name }}</p>
+                    <p class="text-xs text-slate-400">معرف: {{ dept.id }}</p>
+                </div>
+            </div>
+            }
+            @if (apiDepartments.length === 0) {
+            <p class="text-center text-sm text-slate-400 py-6">لا توجد أقسام في هذا الفرع</p>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- ══════════════════════ USERS TAB ══════════════════════ -->
+    @if (activeTab === 'users') {
+    <div class="space-y-4">
+
+        <!-- Filters bar -->
+        <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 flex flex-wrap items-center gap-3">
+            <!-- Branch selector -->
+            @if (branches.length > 0) {
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">الفرع</label>
+                <select [(ngModel)]="selectedBranchId" (ngModelChange)="onBranchSelect($event)"
+                    class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 bg-white focus:outline-none focus:border-blue-400 min-w-[140px]">
+                    @for (b of branches; track b.id) {
+                    <option [ngValue]="b.id">{{ b.name }}</option>
+                    }
+                </select>
+            </div>
+            }
+            <!-- Department selector -->
+            @if (apiDepartments.length > 0) {
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">القسم</label>
+                <select [(ngModel)]="selectedUserDeptId" (ngModelChange)="onDeptSelectForUsers($event)"
+                    class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 bg-white focus:outline-none focus:border-blue-400 min-w-[140px]">
+                    @for (d of apiDepartments; track d.id) {
+                    <option [ngValue]="d.id">{{ d.name }}</option>
+                    }
+                </select>
+            </div>
+            }
+
+            <div class="mr-auto">
+                <button (click)="showAddUser = !showAddUser"
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg transition-all">
+                    <lucide-icon [name]="Plus" class="size-3.5"></lucide-icon>
+                    إضافة مستخدم
+                </button>
+            </div>
+        </div>
+
+        <!-- Add User Form -->
+        @if (showAddUser) {
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-blue-100">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-base font-bold text-slate-800">إضافة مستخدم جديد</h3>
+                <button (click)="resetAddUserForm()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <lucide-icon [name]="XIcon" class="size-5"></lucide-icon>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Name -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">الاسم الكامل <span
+                            class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <lucide-icon [name]="UserIcon"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400"></lucide-icon>
+                        <input type="text" [(ngModel)]="newUser.name" placeholder="أحمد محمد"
+                            class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">البريد الإلكتروني <span
+                            class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <lucide-icon [name]="MailIcon"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400"></lucide-icon>
+                        <input type="email" [(ngModel)]="newUser.email" placeholder="user@example.com"
+                            class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">رقم الهاتف <span
+                            class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <lucide-icon [name]="PhoneIcon"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400"></lucide-icon>
+                        <input type="tel" [(ngModel)]="newUser.phone" placeholder="05xxxxxxxx"
+                            class="w-full pr-10 pl-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">كلمة المرور <span
+                            class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <lucide-icon [name]="LockIcon"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400"></lucide-icon>
+                        <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="newUser.password"
+                            placeholder="••••••••"
+                            class="w-full pr-10 pl-10 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+                        <button type="button" (click)="showPassword = !showPassword"
+                            class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <lucide-icon [name]="showPassword ? EyeOffIcon : EyeIcon" class="size-4"></lucide-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Role -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">الدور الوظيفي <span
+                            class="text-red-500">*</span></label>
+                    <select [(ngModel)]="newUser.role"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 bg-white">
+                        @for (opt of roleOptions; track opt.value) {
+                        <option [ngValue]="opt.value">{{ opt.label }}</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Photo (optional) -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">الصورة الشخصية (اختياري)</label>
+                    <label
+                        class="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl border border-dashed border-slate-300 text-sm cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all">
+                        <lucide-icon [name]="ImageIcon" class="size-4 text-slate-400"></lucide-icon>
+                        <span class="text-slate-400 text-xs">{{ selectedUserFile ? selectedUserFile.name : 'اختر
+                            صورة...' }}</span>
+                        <input type="file" accept="image/*" (change)="onFileChange($event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button (click)="createUser()" [disabled]="isCreatingUser"
+                    class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg transition-all disabled:opacity-60">
+                    @if (isCreatingUser) {
+                    <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    جاري الإضافة...
+                    } @else {
+                    <lucide-icon [name]="Plus" class="size-4"></lucide-icon>
+                    إضافة المستخدم
+                    }
+                </button>
+                <button (click)="resetAddUserForm()"
+                    class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+        }
+
+        <!-- Users List -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/50 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-sm">قائمة المستخدمين</h3>
+                <p class="text-xs text-slate-400 mt-0.5">{{ users.length }} مستخدم في هذا القسم</p>
+            </div>
+
+            @if (isLoadingUsers) {
+            <div class="flex justify-center py-12">
+                <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+            } @else if (users.length === 0) {
+            <div class="text-center py-12">
+                <lucide-icon [name]="UsersIcon" class="size-10 text-slate-300 mx-auto mb-3"></lucide-icon>
+                <p class="text-slate-400 text-sm font-medium">لا يوجد مستخدمون في هذا القسم</p>
+                <p class="text-slate-300 text-xs mt-1">اضغط "إضافة مستخدم" لإضافة أول مستخدم</p>
+            </div>
+            } @else {
+            <div class="divide-y divide-slate-100">
+                @for (user of users; track user.id) {
+                <div class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
+                    <!-- Avatar -->
+                    @if (user.image) {
+                    <img [src]="user.image" [alt]="user.name" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                    } @else {
+                    <div
+                        class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {{ user.name.charAt(0) }}
+                    </div>
+                    }
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold text-slate-800 text-sm">{{ user.name }}</p>
+                        <p class="text-xs text-slate-400 truncate">{{ user.email }}</p>
+                        @if (user.phone) {
+                        <p class="text-xs text-slate-400">{{ user.phone }}</p>
+                        }
+                    </div>
+                    <!-- Role badge -->
+                    <span [class]="'px-2.5 py-1 rounded-lg text-xs font-bold ' + getRoleColor(user.role)">
+                        {{ getRoleLabelAr(user.role) }}
+                    </span>
+                </div>
+                }
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    <!-- ══════════════════════ NOTIFICATIONS TAB ══════════════════════ -->
+    @if (activeTab === 'notifications') {
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+        <h3 class="text-base font-bold text-slate-800 mb-4">إعدادات الإشعارات</h3>
+        <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                    <p class="font-bold text-sm text-slate-800">البريد الإلكتروني</p>
+                    <p class="text-xs text-slate-400">تفعيل إرسال الإشعارات عبر البريد</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.emailEnabled" class="sr-only peer">
+                    <div
+                        class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                    </div>
+                </label>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                    <p class="font-bold text-sm text-slate-800">واتساب</p>
+                    <p class="text-xs text-slate-400">تفعيل إرسال الإشعارات عبر واتساب</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.whatsappEnabled" class="sr-only peer">
+                    <div
+                        class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                    </div>
+                </label>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                    <p class="font-bold text-sm text-slate-800">إرسال QR للعميل</p>
+                    <p class="text-xs text-slate-400">إرسال رمز QR تلقائياً عند الموافقة</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.sendQRToCustomer" class="sr-only peer">
+                    <div
+                        class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                    </div>
+                </label>
+            </div>
+        </div>
+        <button (click)="saveSettings()"
+            class="mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md transition-all hover:shadow-lg">
+            حفظ الإعدادات
+        </button>
+    </div>
+    }
+
+    <!-- ══════════════════════ SLA TAB ══════════════════════ -->
+    @if (activeTab === 'sla') {
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+        <h3 class="text-base font-bold text-slate-800 mb-4">إعدادات مستوى الخدمة (SLA)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1.5">الحد الأقصى للاستجابة (ساعات)</label>
+                <input type="number" [(ngModel)]="slaSettings.maxResponseHours"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1.5">الحد الأقصى للإنجاز (أيام)</label>
+                <input type="number" [(ngModel)]="slaSettings.maxCompletionDays"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1.5">تصعيد بعد (ساعات)</label>
+                <input type="number" [(ngModel)]="slaSettings.escalationHours"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1.5">صلاحية رمز QR (أيام)</label>
+                <input type="number" [(ngModel)]="slaSettings.qrExpiryDays"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20">
+            </div>
+        </div>
+        <div class="mt-4 flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+            <div>
+                <p class="font-bold text-sm text-slate-800">إعادة تعيين تلقائي عند التأخير</p>
+                <p class="text-xs text-slate-400">نقل المهمة لفني آخر عند تجاوز وقت التصعيد</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" [(ngModel)]="slaSettings.autoReassignOnDelay" class="sr-only peer">
+                <div
+                    class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full">
+                </div>
+            </label>
+        </div>
+
+        <!-- Return Reasons -->
+        <div class="mt-6">
+            <h4 class="text-sm font-bold text-slate-700 mb-3">أسباب الإرجاع المحددة مسبقاً</h4>
+            <div class="space-y-2">
+                @for (reason of returnReasons; track reason) {
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <span class="text-sm text-slate-700">{{ reason }}</span>
+                    <button class="text-xs text-red-500 hover:text-red-700">حذف</button>
+                </div>
+                }
+            </div>
+        </div>
+
+        <button (click)="saveSettings()"
+            class="mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md transition-all hover:shadow-lg">
+            حفظ الإعدادات
+        </button>
+    </div>
+    }
+</div>

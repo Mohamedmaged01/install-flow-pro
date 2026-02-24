@@ -1,0 +1,114 @@
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">التقارير والإحصائيات</h2>
+        <p class="text-slate-400 text-sm mt-1">نظرة شاملة على أداء أوامر التركيب</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
+            <div class="w-10 h-10 mx-auto rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
+                <lucide-icon [name]="BarChart3" class="size-5"></lucide-icon>
+            </div>
+            <p class="text-2xl font-extrabold text-slate-900 tabular-nums">{{ totalOrders }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">إجمالي الأوامر</p>
+        </div>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
+            <div
+                class="w-10 h-10 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
+                <lucide-icon [name]="CheckCircle" class="size-5"></lucide-icon>
+            </div>
+            <p class="text-2xl font-extrabold text-emerald-600 tabular-nums">{{ completedOrders }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">مكتملة</p>
+        </div>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
+            <div class="w-10 h-10 mx-auto rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
+                <lucide-icon [name]="ClockIcon" class="size-5"></lucide-icon>
+            </div>
+            <p class="text-2xl font-extrabold text-amber-600 tabular-nums">{{ pendingOrders }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">معلقة</p>
+        </div>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
+            <div
+                class="w-10 h-10 mx-auto rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">
+                <lucide-icon [name]="TrendingUp" class="size-5"></lucide-icon>
+            </div>
+            <p class="text-2xl font-extrabold text-indigo-600 tabular-nums">{{ inProgressOrders }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">قيد التنفيذ</p>
+        </div>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
+            <div class="w-10 h-10 mx-auto rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-2">
+                <lucide-icon [name]="AlertTriangle" class="size-5"></lucide-icon>
+            </div>
+            <p class="text-2xl font-extrabold text-red-600 tabular-nums">{{ urgentOrders }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">عاجلة</p>
+        </div>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
+            <div class="w-10 h-10 mx-auto rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-2">
+                <lucide-icon [name]="TrendingUp" class="size-5"></lucide-icon>
+            </div>
+            <p class="text-2xl font-extrabold text-teal-600 tabular-nums">{{ completionRate }}%</p>
+            <p class="text-xs text-slate-400 mt-0.5">نسبة الإنجاز</p>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+            <app-chart-widget type="bar" title="الأوامر حسب القسم"></app-chart-widget>
+        </div>
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+            <app-chart-widget type="doughnut" title="توزيع الحالات"></app-chart-widget>
+        </div>
+    </div>
+
+    <!-- Department & Tech Stats -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Department Stats -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+            <h3 class="text-base font-bold text-slate-800 mb-4">أداء الأقسام</h3>
+            <div class="space-y-4">
+                @for (dept of departmentStats; track dept.name) {
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-sm font-bold text-slate-700">{{ dept.name }}</span>
+                        <span class="text-xs text-slate-400">{{ dept.completed }}/{{ dept.total }}</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500"
+                            [style.width]="dept.total > 0 ? (dept.completed / dept.total * 100) + '%' : '0%'"
+                            [style.background-color]="dept.color">
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Technician Stats -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+            <h3 class="text-base font-bold text-slate-800 mb-4">أداء الفنيين</h3>
+            <div class="space-y-3">
+                @for (tech of technicianStats; track tech.name) {
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                        {{ tech.name.charAt(0) }}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-slate-800">{{ tech.name }}</p>
+                        <p class="text-xs text-slate-400">{{ tech.completed }} مكتمل من {{ tech.tasks }}</p>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-lg font-extrabold"
+                            [class]="tech.tasks > 0 ? 'text-emerald-600' : 'text-slate-300'">
+                            {{ tech.tasks > 0 ? (tech.completed / tech.tasks * 100 | number:'1.0-0') : '0' }}%
+                        </span>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

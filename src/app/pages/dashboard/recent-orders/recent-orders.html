@@ -1,0 +1,47 @@
+<div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-slate-800">أحدث الأوامر</h3>
+        <button (click)="viewAll()" class="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
+            عرض الكل &rarr;
+        </button>
+    </div>
+
+    @if (isLoading) {
+    <div class="flex justify-center py-8">
+        <div class="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+    } @else {
+    <div class="space-y-3">
+        @for (order of orders; track order.id) {
+        <div (click)="viewOrder(order.id)"
+            class="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50/50 transition-all duration-200 cursor-pointer group">
+            <!-- Status indicator -->
+            <div class="w-2 h-2 rounded-full shrink-0"
+                [class]="getStatusColor(order.status).text.replace('text-', 'bg-')"></div>
+
+            <!-- Order info -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="font-mono text-xs font-bold text-blue-600">#{{ order.id }}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                        [class]="getStatusColor(order.status).bg + ' ' + getStatusColor(order.status).text">
+                        {{ getStatusLabel(order.status) }}
+                    </span>
+                </div>
+                <p class="text-sm text-slate-700 font-medium truncate mt-0.5">عميل: {{ order.customerId }}</p>
+                <p class="text-xs text-slate-400">{{ order.city }} &bull; {{ order.scheduledDate ?
+                    order.scheduledDate.split('T')[0] : '&mdash;' }}</p>
+            </div>
+
+            <!-- Dept badge -->
+            <div class="text-left shrink-0">
+                <span class="text-xs font-bold text-slate-400">Q: {{ order.quotationId || '&mdash;' }}</span>
+            </div>
+        </div>
+        }
+        @if (orders.length === 0) {
+        <p class="text-center text-sm text-slate-400 py-6">لا توجد أوامر حديثة</p>
+        }
+    </div>
+    }
+</div>

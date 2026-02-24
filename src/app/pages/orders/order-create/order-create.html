@@ -1,0 +1,135 @@
+<div class="space-y-6">
+    <!-- Back button + Header -->
+    <div class="flex items-center gap-4">
+        <button (click)="goBack()"
+            class="w-10 h-10 rounded-xl bg-white/80 border border-slate-100/50 flex items-center justify-center hover:bg-slate-50 transition-colors">
+            <lucide-icon [name]="ArrowRight" class="size-5 text-slate-500"></lucide-icon>
+        </button>
+        <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">إنشاء أمر تركيب</h2>
+            <p class="text-sm text-slate-400 mt-0.5">أدخل تفاصيل أمر التركيب الجديد</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Form -->
+        <div class="lg:col-span-2 space-y-4">
+            <!-- Customer & Document Reference -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-4">بيانات العميل والمستند</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">رقم العميل</label>
+                        <input type="text" [(ngModel)]="form.customerId"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                            placeholder="معرّف العميل">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">رقم عرض السعر</label>
+                        <input type="text" [(ngModel)]="form.quotationId"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                            placeholder="QT-2025-XXX">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">رقم الفاتورة</label>
+                        <input type="text" [(ngModel)]="form.invoiceId"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                            placeholder="INV-2025-XXX">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-4">تفاصيل أمر التركيب</h3>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @if (branches.length > 0) {
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5">الفرع</label>
+                            <select [(ngModel)]="selectedBranchId" (ngModelChange)="onBranchChange()"
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                                @for (b of branches; track b.id) {
+                                <option [ngValue]="b.id">{{ b.name }}</option>
+                                }
+                            </select>
+                        </div>
+                        }
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5">القسم *</label>
+                            <select [(ngModel)]="form.departmentId"
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                                <option value="">اختر القسم</option>
+                                @for (dept of apiDepartments; track dept.id) {
+                                <option [value]="dept.id">{{ dept.name }}</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">وصف العمل المطلوب *</label>
+                        <textarea [(ngModel)]="form.description" rows="3"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none"
+                            placeholder="وصف تفصيلي للعمل المطلوب..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">تاريخ التركيب *</label>
+                        <input type="date" [(ngModel)]="form.scheduledDate"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-4">موقع التركيب</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">المدينة *</label>
+                        <input type="text" [(ngModel)]="form.city"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                            placeholder="مثال: الرياض">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1.5">العنوان التفصيلي</label>
+                        <input type="text" [(ngModel)]="form.location"
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                            placeholder="مثال: حي العليا، شارع التحلية">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+                <h3 class="text-base font-bold text-slate-800 mb-4">ملاحظات</h3>
+                <textarea [(ngModel)]="form.notes" rows="3"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none"
+                    placeholder="أي ملاحظات إضافية..."></textarea>
+            </div>
+        </div>
+
+        <!-- Side Panel Actions -->
+        <div class="space-y-4">
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50 space-y-3">
+                <h3 class="text-base font-bold text-slate-800 mb-2">إجراءات</h3>
+                <button (click)="submitForApproval()" [disabled]="!isValid || isSubmitting"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <lucide-icon [name]="Send" class="size-4"></lucide-icon>
+                    إرسال للموافقة
+                </button>
+                <button (click)="saveAsDraft()" [disabled]="!isValid || isSubmitting"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <lucide-icon [name]="Save" class="size-4"></lucide-icon>
+                    حفظ كمسودة
+                </button>
+                @if (isSubmitting) {
+                <p class="text-center text-xs text-slate-400 animate-pulse">جاري الحفظ...</p>
+                }
+            </div>
+            <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-xs text-amber-700">
+                <p class="font-bold mb-1">الحقول الإلزامية</p>
+                <p>القسم، وصف العمل، تاريخ التركيب، المدينة</p>
+            </div>
+        </div>
+    </div>
+</div>
