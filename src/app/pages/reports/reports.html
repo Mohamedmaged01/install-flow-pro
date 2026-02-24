@@ -6,50 +6,46 @@
     </div>
 
     <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+        <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <lucide-icon [name]="BarChart3" class="size-5"></lucide-icon>
             </div>
-            <p class="text-2xl font-extrabold text-slate-900 tabular-nums">{{ totalOrders }}</p>
-            <p class="text-xs text-slate-400 mt-0.5">إجمالي الأوامر</p>
+            <div>
+                <p class="text-xl font-extrabold text-slate-900 tabular-nums">{{ totalOrders }}</p>
+                <p class="text-xs text-slate-400">إجمالي الأوامر</p>
+            </div>
         </div>
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
-            <div
-                class="w-10 h-10 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
+        <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <lucide-icon [name]="CheckCircle" class="size-5"></lucide-icon>
             </div>
-            <p class="text-2xl font-extrabold text-emerald-600 tabular-nums">{{ completedOrders }}</p>
-            <p class="text-xs text-slate-400 mt-0.5">مكتملة</p>
-        </div>
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
-                <lucide-icon [name]="ClockIcon" class="size-5"></lucide-icon>
+            <div>
+                <p class="text-xl font-extrabold text-emerald-600 tabular-nums">{{ completedOrders }}</p>
+                <p class="text-xs text-slate-400">مكتملة</p>
             </div>
-            <p class="text-2xl font-extrabold text-amber-600 tabular-nums">{{ pendingOrders }}</p>
-            <p class="text-xs text-slate-400 mt-0.5">معلقة</p>
         </div>
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
-            <div
-                class="w-10 h-10 mx-auto rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">
-                <lucide-icon [name]="TrendingUp" class="size-5"></lucide-icon>
+        <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <lucide-icon [name]="ShieldCheck" class="size-5"></lucide-icon>
             </div>
-            <p class="text-2xl font-extrabold text-indigo-600 tabular-nums">{{ inProgressOrders }}</p>
-            <p class="text-xs text-slate-400 mt-0.5">قيد التنفيذ</p>
+            <div>
+                <p class="text-xl font-extrabold text-indigo-600 tabular-nums">{{ slaComplianceRate }}%</p>
+                <p class="text-xs text-slate-400">الالتزام بالموعد (SLA)</p>
+            </div>
         </div>
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-2">
-                <lucide-icon [name]="AlertTriangle" class="size-5"></lucide-icon>
+        <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <lucide-icon [name]="RotateCcw" class="size-5"></lucide-icon>
             </div>
-            <p class="text-2xl font-extrabold text-red-600 tabular-nums">{{ urgentOrders }}</p>
-            <p class="text-xs text-slate-400 mt-0.5">عاجلة</p>
-        </div>
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-slate-100/50 text-center">
-            <div class="w-10 h-10 mx-auto rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center mb-2">
-                <lucide-icon [name]="TrendingUp" class="size-5"></lucide-icon>
+            <div>
+                <p class="text-xl font-extrabold text-red-600 tabular-nums">{{ returnRate }}%</p>
+                <p class="text-xs text-slate-400">نسبة المرتجعات</p>
             </div>
-            <p class="text-2xl font-extrabold text-teal-600 tabular-nums">{{ completionRate }}%</p>
-            <p class="text-xs text-slate-400 mt-0.5">نسبة الإنجاز</p>
         </div>
     </div>
 
@@ -64,7 +60,7 @@
     </div>
 
     <!-- Department & Tech Stats -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Department Stats -->
         <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
             <h3 class="text-base font-bold text-slate-800 mb-4">أداء الأقسام</h3>
@@ -86,6 +82,24 @@
             </div>
         </div>
 
+        <!-- City stats -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-800">توزيع المدن</h3>
+                <lucide-icon [name]="MapPin" class="size-4 text-slate-400"></lucide-icon>
+            </div>
+            <div class="space-y-3">
+                @for (city of cityStats; track city.city) {
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                    <span class="text-sm font-medium text-slate-700">{{ city.city }}</span>
+                    <span
+                        class="text-sm font-bold text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-slate-100 shadow-sm">{{
+                        city.count }}</span>
+                </div>
+                }
+            </div>
+        </div>
+
         <!-- Technician Stats -->
         <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
             <h3 class="text-base font-bold text-slate-800 mb-4">أداء الفنيين</h3>
@@ -94,7 +108,7 @@
                 <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                     <div
                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                        {{ tech.name.charAt(0) }}
+                        {{ (tech.name || 'F').charAt(0) }}
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-bold text-slate-800">{{ tech.name }}</p>

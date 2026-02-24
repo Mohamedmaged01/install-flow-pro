@@ -106,6 +106,7 @@ export class Reports implements OnInit {
             name: this.departmentNames.get(id) ?? `قسم ${id}`,
             total: stats.total,
             completed: stats.completed,
+            color: 'bg-blue-500',
         }));
     }
 
