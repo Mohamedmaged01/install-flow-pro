@@ -44,6 +44,26 @@
                 class="w-10 h-10 rounded-xl bg-slate-50 hover:bg-blue-50 hover:text-blue-600 text-slate-500 flex items-center justify-center transition-colors">
                 <lucide-icon [name]="Mail" class="size-5"></lucide-icon>
             </button>
+
+            <!-- Divider -->
+            <div class="w-px h-8 bg-slate-200"></div>
+
+            <!-- User name -->
+            @if (auth.isLoggedIn()) {
+            <div class="hidden sm:flex items-center gap-2">
+                <div
+                    class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                    {{ auth.userName().charAt(0) }}
+                </div>
+                <span class="text-sm font-semibold text-slate-700 max-w-[100px] truncate">{{ auth.userName() }}</span>
+            </div>
+            }
+
+            <!-- Logout button -->
+            <button (click)="logout()" title="تسجيل الخروج"
+                class="w-10 h-10 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 flex items-center justify-center transition-colors">
+                <lucide-icon [name]="LogOut" class="size-5"></lucide-icon>
+            </button>
         </div>
     </div>
 </header>

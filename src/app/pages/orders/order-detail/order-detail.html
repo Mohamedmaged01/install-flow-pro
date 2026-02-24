@@ -7,18 +7,50 @@
         </button>
         @if (order) {
         <div class="flex-1">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-wrap">
                 <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">أمر #{{ order.id }}</h2>
                 <app-status-badge [status]="order.status"></app-status-badge>
             </div>
             <p class="text-sm text-slate-400 mt-0.5">عميل: {{ order.customerId }} • عرض سعر: {{ order.quotationId }}</p>
+        </div>
+
+        <!-- Role-based action buttons -->
+        <div class="flex items-center gap-2 flex-wrap">
+            @if (canApprove) {
+            <button (click)="approveOrder()" [disabled]="isSubmitting"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                <lucide-icon [name]="CheckCircle" class="size-4"></lucide-icon>
+                موافقة
+            </button>
+            }
+            @if (canApprove) {
+            <button (click)="rejectOrder()" [disabled]="isSubmitting"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors disabled:opacity-50">
+                <lucide-icon [name]="XCircle" class="size-4"></lucide-icon>
+                رفض
+            </button>
+            }
+            @if (canReturn) {
+            <button (click)="openReturnModal()" [disabled]="isSubmitting"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 transition-colors disabled:opacity-50">
+                <lucide-icon [name]="RotateCcw" class="size-4"></lucide-icon>
+                إرجاع
+            </button>
+            }
+            @if (canEditOrder) {
+            <button (click)="editOrder()"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 transition-colors">
+                <lucide-icon [name]="Edit" class="size-4"></lucide-icon>
+                تعديل
+            </button>
+            }
         </div>
         }
     </div>
 
     @if (isLoading) {
     <div class="flex justify-center py-16">
-        <div class="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <div class="w-10 h-10 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
     </div>
     }
 
@@ -79,7 +111,7 @@
                     </div>
                     <div class="space-y-2 text-sm">
                         <p><span class="font-bold text-slate-700">رمز التحقق:</span> <span
-                                class="font-mono text-blue-600">{{ order.qrToken }}</span></p>
+                                class="font-mono text-blue-600 break-all">{{ order.qrToken }}</span></p>
                         <p class="text-xs text-slate-400">يُرسل رمز QR للعميل عبر البريد والواتساب</p>
                     </div>
                 </div>
@@ -90,11 +122,13 @@
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-bold text-slate-800">المهام المُسندة</h3>
+                    @if (canAssignTechnician) {
                     <button (click)="openAssignModal()"
                         class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
                         <lucide-icon [name]="UserPlus" class="size-3.5"></lucide-icon>
                         تعيين فني
                     </button>
+                    }
                 </div>
                 @if (tasks.length === 0) {
                 <p class="text-sm text-slate-400 text-center py-4">لا توجد مهام مسندة لهذا الأمر</p>
@@ -112,10 +146,12 @@
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-700">{{
                                 task.status }}</span>
+                            @if (isTechnician || isSupervisor || isAdmin) {
                             <button (click)="openStatusModal(task)"
                                 class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-colors">
                                 تحديث
                             </button>
+                            }
                         </div>
                     </div>
                     }
@@ -123,6 +159,7 @@
             </div>
 
             <!-- Evidence Upload -->
+            @if (canUploadEvidence) {
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-bold text-slate-800">رفع الأدلة والصور</h3>
@@ -134,6 +171,7 @@
                 </div>
                 <p class="text-sm text-slate-400">ارفع صور الإنجاز وتقارير التركيب لهذا الأمر</p>
             </div>
+            }
 
             <!-- History / Timeline -->
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
@@ -172,15 +210,13 @@
 
         <!-- Sidebar -->
         <div class="space-y-4">
-            <!-- Order Info -->
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
                 <h3 class="text-base font-bold text-slate-800 mb-4">معلومات الأمر</h3>
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between"><span class="text-slate-500">رقم الأمر</span><span
                             class="font-bold text-slate-800 font-mono">#{{ order.id }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">الحالة</span><span
-                            class="font-bold text-slate-800">{{ STATUS_LABELS[order.status] }}</span>
-                    </div>
+                            class="font-bold text-slate-800">{{ STATUS_LABELS[order.status] }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">الفرع</span><span
                             class="font-bold text-slate-800">#{{ order.branchId }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">القسم</span><span
@@ -196,7 +232,52 @@
         </div>
     </div>
 
-    <!-- Assign Modal -->
+    <!-- ══ RETURN MODAL ══ -->
+    @if (showReturnModal) {
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showReturnModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-bold text-slate-900 mb-1">إرجاع الأمر</h3>
+            <p class="text-sm text-slate-400 mb-4">يرجى تحديد سبب الإرجاع</p>
+
+            <div class="space-y-2 mb-4">
+                @for (reason of RETURN_REASONS; track reason) {
+                <button (click)="returnReason = reason"
+                    [class]="returnReason === reason ? 'w-full text-right px-4 py-2.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-sm font-bold text-amber-800 cursor-pointer' : 'w-full text-right px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-600 hover:border-amber-300 hover:bg-amber-50/50 cursor-pointer transition-all'">
+                    {{ reason }}
+                </button>
+                }
+            </div>
+
+            @if (returnReason === 'أخرى') {
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-600 mb-1">سبب مخصص</label>
+                <input type="text" [(ngModel)]="returnCustomReason" placeholder="اكتب السبب..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-amber-400">
+            </div>
+            }
+
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات إضافية (اختياري)</label>
+                <textarea [(ngModel)]="returnNote" rows="2" placeholder="تفاصيل إضافية..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-amber-400 resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button (click)="submitReturn()" [disabled]="!returnReason || isSubmitting"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 disabled:opacity-50 transition-colors">
+                    تأكيد الإرجاع
+                </button>
+                <button (click)="showReturnModal = false"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- ══ ASSIGN MODAL ══ -->
     @if (showAssignModal) {
     <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         (click)="showAssignModal = false">
@@ -236,7 +317,7 @@
     </div>
     }
 
-    <!-- Task Status Modal -->
+    <!-- ══ TASK STATUS MODAL ══ -->
     @if (showStatusModal && activeTask) {
     <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         (click)="showStatusModal = false">
@@ -259,11 +340,11 @@
             </div>
             <div class="flex gap-3">
                 <button (click)="submitTaskStatus()" [disabled]="isSubmitting"
-                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 disabled:opacity-50 transition-all cursor-pointer">
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 disabled:opacity-50">
                     تحديث
                 </button>
                 <button (click)="showStatusModal = false"
-                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer">
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">
                     إلغاء
                 </button>
             </div>
@@ -271,7 +352,7 @@
     </div>
     }
 
-    <!-- Evidence Modal -->
+    <!-- ══ EVIDENCE MODAL ══ -->
     @if (showEvidenceModal) {
     <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         (click)="showEvidenceModal = false">
@@ -292,12 +373,12 @@
             </div>
             <div class="flex gap-3">
                 <button (click)="submitEvidence()" [disabled]="isSubmitting"
-                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-700 disabled:opacity-50 transition-all cursor-pointer flex items-center justify-center gap-2">
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
                     <lucide-icon [name]="Upload" class="size-4"></lucide-icon>
                     رفع
                 </button>
                 <button (click)="showEvidenceModal = false"
-                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all cursor-pointer">
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">
                     إلغاء
                 </button>
             </div>

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { LucideAngularModule, Search, Bell, Mail, Menu } from 'lucide-angular';
+import { LucideAngularModule, Search, Bell, Mail, Menu, LogOut } from 'lucide-angular';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { MockDataService } from '../../services/mock-data.service';
 
@@ -15,11 +16,18 @@ export class Header {
   readonly Bell = Bell;
   readonly Mail = Mail;
   readonly Menu = Menu;
+  readonly LogOut = LogOut;
 
   constructor(
     public auth: AuthService,
     public data: MockDataService,
+    private router: Router,
   ) { }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
 
   get unreadCount(): number {
     const user = this.auth.user();

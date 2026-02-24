@@ -24,6 +24,7 @@ export const routes: Routes = [
             { path: 'dashboard', component: Dashboard },
             { path: 'documents', component: Documents },
             { path: 'orders/create', component: OrderCreate },
+            { path: 'orders/:id/edit', component: OrderCreate },
             { path: 'orders/:id', component: OrderDetail },
             { path: 'jobs', component: Orders },
             { path: 'schedule', component: Schedule },
