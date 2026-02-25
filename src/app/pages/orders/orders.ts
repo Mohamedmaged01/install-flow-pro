@@ -19,7 +19,9 @@ const STATUS_LABEL_MAP: Record<ApiOrderStatus, string> = {
     [ApiOrderStatus.PendingSalesManager]: 'بانتظار مدير المبيعات',
     [ApiOrderStatus.PendingSupervisor]: 'بانتظار المشرف',
     [ApiOrderStatus.InProgress]: 'قيد التنفيذ',
+    [ApiOrderStatus.PendingQR]: 'بانتظار تأكيد QR',
     [ApiOrderStatus.Completed]: 'مكتمل',
+    [ApiOrderStatus.Closed]: 'مغلق',
     [ApiOrderStatus.Returned]: 'مُعاد',
     [ApiOrderStatus.Cancelled]: 'ملغي',
 };

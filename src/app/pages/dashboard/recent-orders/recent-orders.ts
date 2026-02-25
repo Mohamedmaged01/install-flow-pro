@@ -19,7 +19,9 @@ export class RecentOrders implements OnInit {
     [ApiOrderStatus.PendingSalesManager]: 'بانتظار مدير المبيعات',
     [ApiOrderStatus.PendingSupervisor]: 'بانتظار المشرف',
     [ApiOrderStatus.InProgress]: 'قيد التنفيذ',
+    [ApiOrderStatus.PendingQR]: 'بانتظار تأكيد QR',
     [ApiOrderStatus.Completed]: 'مكتمل',
+    [ApiOrderStatus.Closed]: 'مغلق',
     [ApiOrderStatus.Returned]: 'مُعاد',
     [ApiOrderStatus.Cancelled]: 'ملغي',
   };
@@ -29,7 +31,9 @@ export class RecentOrders implements OnInit {
     [ApiOrderStatus.PendingSalesManager]: { bg: 'bg-amber-50', text: 'text-amber-700' },
     [ApiOrderStatus.PendingSupervisor]: { bg: 'bg-purple-50', text: 'text-purple-700' },
     [ApiOrderStatus.InProgress]: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+    [ApiOrderStatus.PendingQR]: { bg: 'bg-blue-50', text: 'text-blue-700' },
     [ApiOrderStatus.Completed]: { bg: 'bg-teal-50', text: 'text-teal-700' },
+    [ApiOrderStatus.Closed]: { bg: 'bg-slate-200', text: 'text-slate-900' },
     [ApiOrderStatus.Returned]: { bg: 'bg-rose-50', text: 'text-rose-700' },
     [ApiOrderStatus.Cancelled]: { bg: 'bg-red-50', text: 'text-red-700' },
   };

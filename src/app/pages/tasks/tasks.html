@@ -25,6 +25,16 @@
     <div class="flex justify-center py-16">
         <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
     </div>
+    } @else if (loadError) {
+    <div class="text-center py-16 border-2 border-dashed border-red-100 rounded-2xl bg-red-50/50">
+        <lucide-icon [name]="AlertTriangle" class="size-10 text-red-300 mx-auto mb-3"></lucide-icon>
+        <p class="font-bold text-red-600 mb-1">تعذر تحميل المهام</p>
+        <p class="text-sm text-slate-400 mb-4">تحقق من اتصالك بالشبكة أو أن الخادم يعمل</p>
+        <button (click)="loadTasks()"
+            class="px-5 py-2 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors">
+            إعادة المحاولة
+        </button>
+    </div>
     } @else {
 
     <!-- Active Tasks -->
@@ -106,6 +116,14 @@
                     <lucide-icon [name]="ChevronRight" class="size-3.5"></lucide-icon>
                     عرض
                 </button>
+                @if (canScanQr(task)) {
+                <button (click)="openScanModal(task)"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                    title="مسح QR للإغلاق">
+                    <lucide-icon [name]="QrCode" class="size-3.5"></lucide-icon>
+                    إغلاق QR
+                </button>
+                }
             </div>
             }
         </div>
@@ -152,7 +170,40 @@
         </div>
     </div>
     }
-    <!-- ══ CREATE TASK MODAL ══ -->
+    <!-- ══ SCAN QR MODAL ══ -->
+    @if (showScanModal) {
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showScanModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4" (click)="$event.stopPropagation()">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                    <lucide-icon [name]="QrCode" class="size-5"></lucide-icon>
+                </div>
+                <h3 class="text-lg font-extrabold text-slate-900">مسح رمز QR</h3>
+            </div>
+            <p class="text-sm text-slate-400">أدخل رمز QR المقدم من العميل لإغلاق الأمر #{{scanningOrderId}}</p>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">رمز التحقق (QR Token)</label>
+                <input type="text" [(ngModel)]="scanToken" placeholder="أدخل الرمز هنا..."
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 text-lg font-mono text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+            </div>
+
+            <div class="flex gap-3">
+                <button (click)="submitScan()" [disabled]="!scanToken.trim() || isSubmitting"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                    تأكيد وإغلاق الحساب
+                </button>
+                <button (click)="showScanModal = false"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- ══ CREATE TASK MODAL (ADMIN/SUPERVISOR) ══ -->
     @if (showCreateModal) {
     <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         (click)="showCreateModal = false">

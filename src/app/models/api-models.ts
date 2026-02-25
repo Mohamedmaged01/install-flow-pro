@@ -29,7 +29,9 @@ export enum ApiOrderStatus {
     PendingSalesManager = 'PendingSalesManager',
     PendingSupervisor = 'PendingSupervisor',
     InProgress = 'InProgress',
+    PendingQR = 'PendingQR',
     Completed = 'Completed',
+    Closed = 'Closed',
     Returned = 'Returned',
     Cancelled = 'Cancelled',
 }
@@ -217,7 +219,9 @@ export function apiStatusToFrontend(s: ApiOrderStatus): OrderStatus {
         case ApiOrderStatus.PendingSalesManager: return OrderStatus.PENDING_APPROVAL;
         case ApiOrderStatus.PendingSupervisor: return OrderStatus.UNDER_REVIEW;
         case ApiOrderStatus.InProgress: return OrderStatus.IN_PROGRESS;
+        case ApiOrderStatus.PendingQR: return OrderStatus.PENDING_QR;
         case ApiOrderStatus.Completed: return OrderStatus.COMPLETED;
+        case ApiOrderStatus.Closed: return OrderStatus.CLOSED;
         case ApiOrderStatus.Returned: return OrderStatus.RETURNED;
         case ApiOrderStatus.Cancelled: return OrderStatus.CANCELLED;
         default: return OrderStatus.DRAFT;
@@ -236,8 +240,8 @@ export function frontendStatusToApi(s: OrderStatus): ApiOrderStatus {
         case OrderStatus.ON_HOLD: return ApiOrderStatus.InProgress;
         case OrderStatus.RETURNED_FROM_FIELD: return ApiOrderStatus.Returned;
         case OrderStatus.COMPLETED: return ApiOrderStatus.Completed;
-        case OrderStatus.PENDING_QR: return ApiOrderStatus.Completed;
-        case OrderStatus.CLOSED: return ApiOrderStatus.Completed;
+        case OrderStatus.PENDING_QR: return ApiOrderStatus.PendingQR;
+        case OrderStatus.CLOSED: return ApiOrderStatus.Closed;
         case OrderStatus.CANCELLED: return ApiOrderStatus.Cancelled;
         default: return ApiOrderStatus.Draft;
     }

@@ -1,17 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TasksService } from '../../services/tasks.service';
 import { OrdersService } from '../../services/orders.service';
 import { DepartmentsService } from '../../services/departments.service';
+import { finalize } from 'rxjs/operators';
 import {
     ApiTask, ApiTaskStatus, TaskStatusUpdateDto,
-    AssignTaskDto, ApiOrder, ApiRole,
+    AssignTaskDto, ApiOrder, ApiRole, ApiOrderStatus, OrderActionDto
 } from '../../models/api-models';
 import { UserRole } from '../../models';
 import {
     LucideAngularModule, ClipboardList, RefreshCw, CheckCircle,
-    Clock, MapPin, Play, ChevronRight, AlertTriangle, Plus,
+    Clock, MapPin, Play, ChevronRight, AlertTriangle, Plus, QrCode
 } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
 
@@ -42,6 +43,7 @@ const TASK_STATUS_COLORS: Record<ApiTaskStatus, string> = {
     standalone: true,
     imports: [LucideAngularModule, FormsModule],
     templateUrl: './tasks.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Tasks implements OnInit {
     readonly ClipboardList = ClipboardList;
@@ -53,6 +55,7 @@ export class Tasks implements OnInit {
     readonly ChevronRight = ChevronRight;
     readonly AlertTriangle = AlertTriangle;
     readonly Plus = Plus;
+    readonly QrCode = QrCode;
     readonly ApiTaskStatus = ApiTaskStatus;
     readonly TASK_STATUS_LABELS = TASK_STATUS_LABELS;
     readonly TASK_STATUS_COLORS = TASK_STATUS_COLORS;
@@ -60,6 +63,11 @@ export class Tasks implements OnInit {
 
     tasks: ApiTask[] = [];
     isLoading = false;
+    loadError = false;
+
+    // Snapshot role to avoid NG0100 (signal changing during CD)
+    private _userRole: UserRole = UserRole.TECHNICIAN;
+    private _userId = 0;
 
     // Status update modal
     showStatusModal = false;
@@ -76,26 +84,39 @@ export class Tasks implements OnInit {
     isLoadingTechs = false;
 
     constructor(
-        public auth: AuthService,
+        private auth: AuthService,
         private tasksService: TasksService,
         private ordersService: OrdersService,
         private departmentsService: DepartmentsService,
         private router: Router,
+        private cdr: ChangeDetectorRef,
     ) { }
 
     ngOnInit() {
+        this._userRole = this.auth.userRole() ?? UserRole.TECHNICIAN;
+        this._userId = this.auth.userId();
         this.loadTasks();
     }
 
     loadTasks() {
         this.isLoading = true;
-        this.tasksService.getAll().subscribe({
-            next: (tasks) => {
-                this.tasks = tasks ?? [];
+        this.loadError = false;
+        this.cdr.markForCheck();
+        this.tasksService.getAll()
+            .pipe(finalize(() => {
                 this.isLoading = false;
-            },
-            error: () => { this.isLoading = false; },
-        });
+                this.cdr.markForCheck();
+            }))
+            .subscribe({
+                next: (tasks) => {
+                    this.tasks = tasks ?? [];
+                    this.cdr.markForCheck();
+                },
+                error: () => {
+                    this.loadError = true;
+                    this.cdr.markForCheck();
+                },
+            });
     }
 
     get activeTasks(): ApiTask[] {
@@ -133,9 +154,27 @@ export class Tasks implements OnInit {
             next: () => {
                 this.isSubmitting = false;
                 this.showStatusModal = false;
+
+                // If technician completes task, move order to PendingQR
+                if (this.newStatus === ApiTaskStatus.Completed) {
+                    this.moveToPendingQR(this.activeTask!.orderId);
+                }
+
                 this.loadTasks();
             },
             error: () => { this.isSubmitting = false; },
+        });
+    }
+
+    private moveToPendingQR(orderId: number) {
+        const dto: OrderActionDto = {
+            currentUserId: this._userId,
+            nextStatus: ApiOrderStatus.PendingQR,
+            role: ApiRole.Technician,
+            note: 'تم إكمال المهمة وبانتظار مسح QR',
+        };
+        this.ordersService.handleOrder(orderId, dto).subscribe({
+            next: () => { }
         });
     }
 
@@ -202,8 +241,39 @@ export class Tasks implements OnInit {
         });
     }
 
+    // ─── QR Scanning ───
+    showScanModal = false;
+    scanToken = '';
+    scanningOrderId: number | null = null;
+
+    openScanModal(task: ApiTask) {
+        this.scanningOrderId = task.orderId;
+        this.scanToken = '';
+        this.showScanModal = true;
+    }
+
+    submitScan() {
+        if (!this.scanningOrderId || !this.scanToken.trim()) return;
+        this.isSubmitting = true;
+        this.ordersService.verifyQr({ orderId: this.scanningOrderId, token: this.scanToken }).subscribe({
+            next: () => {
+                this.isSubmitting = false;
+                this.showScanModal = false;
+                this.loadTasks();
+            },
+            error: () => {
+                this.isSubmitting = false;
+            },
+        });
+    }
+
+    canScanQr(task: ApiTask): boolean {
+        // This is a bit tricky because the Task object doesn't have the Order Status
+        // For simplicity in this UI, we allow it if the task is completed
+        return task.status === ApiTaskStatus.Completed;
+    }
+
     get canCreateTask(): boolean {
-        const role = this.auth.userRole();
-        return role === UserRole.ADMIN || role === UserRole.SUPERVISOR || role === UserRole.SALES_MANAGER;
+        return this._userRole === UserRole.ADMIN || this._userRole === UserRole.SUPERVISOR || this._userRole === UserRole.SALES_MANAGER;
     }
 }

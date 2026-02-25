@@ -6,7 +6,9 @@ const STATUS_LABEL_MAP: Record<ApiOrderStatus, string> = {
     [ApiOrderStatus.PendingSalesManager]: 'بانتظار مدير المبيعات',
     [ApiOrderStatus.PendingSupervisor]: 'بانتظار المشرف',
     [ApiOrderStatus.InProgress]: 'قيد التنفيذ',
+    [ApiOrderStatus.PendingQR]: 'بانتظار تأكيد QR',
     [ApiOrderStatus.Completed]: 'مكتمل',
+    [ApiOrderStatus.Closed]: 'مغلق',
     [ApiOrderStatus.Returned]: 'مُعاد',
     [ApiOrderStatus.Cancelled]: 'ملغي',
 };
@@ -16,7 +18,9 @@ const STATUS_COLOR_MAP: Record<ApiOrderStatus, { bg: string; text: string; borde
     [ApiOrderStatus.PendingSalesManager]: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
     [ApiOrderStatus.PendingSupervisor]: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
     [ApiOrderStatus.InProgress]: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    [ApiOrderStatus.PendingQR]: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
     [ApiOrderStatus.Completed]: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+    [ApiOrderStatus.Closed]: { bg: 'bg-slate-200', text: 'text-slate-900', border: 'border-slate-300' },
     [ApiOrderStatus.Returned]: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
     [ApiOrderStatus.Cancelled]: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
 };

@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, AfterViewInit } from '@angular/core';
+﻿import { Component, OnInit, AfterViewInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
@@ -35,6 +35,7 @@ const RETURN_REASONS = [
     standalone: true,
     imports: [LucideAngularModule, StatusBadge, FormsModule],
     templateUrl: './order-detail.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderDetail implements OnInit, AfterViewInit {
     readonly ArrowRight = ArrowRight;
@@ -67,7 +68,9 @@ export class OrderDetail implements OnInit, AfterViewInit {
         [ApiOrderStatus.PendingSalesManager]: 'بانتظار مدير المبيعات',
         [ApiOrderStatus.PendingSupervisor]: 'بانتظار المشرف',
         [ApiOrderStatus.InProgress]: 'قيد التنفيذ',
+        [ApiOrderStatus.PendingQR]: 'بانتظار تأكيد QR',
         [ApiOrderStatus.Completed]: 'مكتمل',
+        [ApiOrderStatus.Closed]: 'مغلق',
         [ApiOrderStatus.Returned]: 'مُعاد',
         [ApiOrderStatus.Cancelled]: 'ملغي',
     };
@@ -108,17 +111,24 @@ export class OrderDetail implements OnInit, AfterViewInit {
     selectedOrderStatus: ApiOrderStatus = ApiOrderStatus.PendingSalesManager;
     orderStatusNote = '';
 
+    // Snapshot auth signals to avoid NG0100
+    private _role: UserRole | null = null;
+    private _userId = 0;
+
     constructor(
-        public auth: AuthService,
+        private auth: AuthService,
         private route: ActivatedRoute,
         private router: Router,
         private toast: ToastService,
         private ordersService: OrdersService,
         private tasksService: TasksService,
         private departmentsService: DepartmentsService,
+        private cdr: ChangeDetectorRef,
     ) { }
 
     ngOnInit() {
+        this._role = this.auth.userRole();
+        this._userId = this.auth.userId();
         const id = parseInt(this.route.snapshot.params['id'], 10);
         if (!isNaN(id)) this.loadOrder(id);
     }
@@ -130,10 +140,12 @@ export class OrderDetail implements OnInit, AfterViewInit {
 
     loadOrder(id: number) {
         this.isLoading = true;
+        this.cdr.markForCheck();
         this.ordersService.getById(id).subscribe({
             next: (order) => {
                 this.order = order;
                 this.isLoading = false;
+                this.cdr.markForCheck();
                 if (this.order) {
                     this.loadHistory(id);
                     this.loadTasks();
@@ -143,6 +155,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
             },
             error: () => {
                 this.isLoading = false;
+                this.cdr.markForCheck();
                 this.toast.error('غير موجود', 'لم يتم العثور على الأمر');
             },
         });
@@ -150,7 +163,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
 
     loadHistory(orderId: number) {
         this.ordersService.getHistory(orderId).subscribe({
-            next: (h) => { this.history = h; },
+            next: (h) => { this.history = h; this.cdr.markForCheck(); },
             error: () => { },
         });
     }
@@ -163,6 +176,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         this.tasksService.getAll().subscribe({
             next: (tasks) => {
                 this.tasks = (tasks || []).filter(t => t.orderId === this.order?.id);
+                this.cdr.markForCheck();
             },
             error: () => { },
         });
@@ -175,6 +189,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
                 this.availableTechnicians = users
                     .filter(u => u.role === ApiRole.Technician)
                     .map(u => ({ id: u.id, name: u.name }));
+                this.cdr.markForCheck();
             },
             error: () => { },
         });
@@ -193,7 +208,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
     goBack() { this.router.navigate(['/jobs']); }
 
     // ─── Role helpers ───
-    get role() { return this.auth.userRole(); }
+    get role() { return this._role; }
     get isSalesRep() { return this.role === UserRole.SALES_REP; }
     get isSalesManager() { return this.role === UserRole.SALES_MANAGER; }
     get isSupervisor() { return this.role === UserRole.SUPERVISOR; }
@@ -201,66 +216,90 @@ export class OrderDetail implements OnInit, AfterViewInit {
     get isAdmin() { return this.role === UserRole.ADMIN; }
 
     get canApprove() {
-        return this.isSalesManager && this.order?.status === ApiOrderStatus.PendingSalesManager;
-    }
-    get canReviewAsSupervisor() {
-        return this.isSupervisor && this.order?.status === ApiOrderStatus.PendingSupervisor;
+        if (!this.order) return false;
+        if (this.isSalesManager) return this.order.status === ApiOrderStatus.PendingSalesManager;
+        if (this.isSupervisor) return this.order.status === ApiOrderStatus.PendingSupervisor;
+        return false;
     }
     get canAssignTechnician() {
         return (this.isSupervisor || this.isAdmin) &&
             (this.order?.status === ApiOrderStatus.PendingSupervisor || this.order?.status === ApiOrderStatus.InProgress);
     }
     get canReturn() {
-        return (this.isSalesManager && this.order?.status === ApiOrderStatus.PendingSalesManager) ||
-            (this.isSupervisor && (this.order?.status === ApiOrderStatus.PendingSupervisor || this.order?.status === ApiOrderStatus.InProgress)) ||
-            (this.isTechnician && this.order?.status === ApiOrderStatus.InProgress) ||
-            this.isAdmin;
+        if (!this.order) return false;
+        if (this.isAdmin) return true;
+        if (this.isSalesManager) return this.order.status === ApiOrderStatus.PendingSalesManager;
+        if (this.isSupervisor) return this.order.status === ApiOrderStatus.PendingSupervisor || this.order.status === ApiOrderStatus.InProgress || this.order.status === ApiOrderStatus.PendingQR;
+        if (this.isTechnician) return this.order.status === ApiOrderStatus.InProgress;
+        return false;
+    }
+    get canCancel() {
+        if (!this.order) return false;
+        if (this.isAdmin) return true;
+        if (this.isSalesManager) return this.order.status === ApiOrderStatus.PendingSalesManager;
+        if (this.isSupervisor) return this.order.status === ApiOrderStatus.PendingSupervisor;
+        return false;
+    }
+    get canScanQr() {
+        return (this.isTechnician || this.isSupervisor || this.isAdmin) &&
+            this.order?.status === ApiOrderStatus.PendingQR;
+    }
+    get canOverrideClose() {
+        return this.isAdmin && this.order?.status === ApiOrderStatus.PendingQR;
     }
     get canUploadEvidence() {
         return (this.isTechnician || this.isSupervisor || this.isAdmin) &&
-            this.order?.status === ApiOrderStatus.InProgress;
+            (this.order?.status === ApiOrderStatus.InProgress || this.order?.status === ApiOrderStatus.PendingQR);
     }
     get canEditOrder() {
-        return this.isSalesRep && this.order?.status === ApiOrderStatus.Returned;
+        return this.isSalesRep && (this.order?.status === ApiOrderStatus.Returned || this.order?.status === ApiOrderStatus.Draft);
     }
 
     // ─── Approve ───
     approveOrder() {
         if (!this.order) return;
         this.isSubmitting = true;
+
+        // If supervisor, approving means moving to InProgress if assigned, 
+        // but usually they just assign. Let's stick to the workflow:
+        // Sales Manager approves -> moves to PendingSupervisor.
+        const nextStatus = this.isSalesManager ? ApiOrderStatus.PendingSupervisor : ApiOrderStatus.InProgress;
+
         const dto: OrderActionDto = {
-            currentUserId: this.auth.userId(),
-            nextStatus: ApiOrderStatus.PendingSupervisor,
-            role: ApiRole.SalesManager,
+            currentUserId: this._userId,
+            nextStatus: nextStatus,
+            role: this.apiRole,
             note: 'تمت الموافقة',
         };
         this.ordersService.handleOrder(this.order.id, dto).subscribe({
             next: () => {
                 this.isSubmitting = false;
-                this.toast.success('تمت الموافقة', 'تم إرسال الأمر للمشرف');
+                this.cdr.markForCheck();
+                this.toast.success('تمت الموافقة', this.isSalesManager ? 'تم إرسال الأمر للمشرف' : 'تم تفعيل الأمر');
                 if (this.order) this.loadOrder(this.order.id);
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
-    // ─── Reject ───
-    rejectOrder() {
+    // ─── Cancel ───
+    cancelOrder() {
         if (!this.order) return;
         this.isSubmitting = true;
         const dto: OrderActionDto = {
-            currentUserId: this.auth.userId(),
+            currentUserId: this._userId,
             nextStatus: ApiOrderStatus.Cancelled,
-            role: ApiRole.SalesManager,
-            note: 'تم الرفض',
+            role: this.apiRole,
+            note: 'تم الإلغاء',
         };
         this.ordersService.handleOrder(this.order.id, dto).subscribe({
             next: () => {
                 this.isSubmitting = false;
-                this.toast.error('تم الرفض', 'تم رفض الأمر');
+                this.cdr.markForCheck();
+                this.toast.error('تم الإلغاء', 'تم إلغاء الأمر');
                 if (this.order) this.loadOrder(this.order.id);
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
@@ -281,7 +320,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         if (!this.order) return;
         this.isSubmitting = true;
         const dto: OrderActionDto = {
-            currentUserId: this.auth.userId(),
+            currentUserId: this._userId,
             nextStatus: ApiOrderStatus.Returned,
             role: this.apiRole,
             note: reason + (this.returnNote ? ' — ' + this.returnNote : ''),
@@ -290,10 +329,11 @@ export class OrderDetail implements OnInit, AfterViewInit {
             next: () => {
                 this.isSubmitting = false;
                 this.showReturnModal = false;
+                this.cdr.markForCheck();
                 this.toast.info('تم الإرجاع', `تم إرجاع الأمر — السبب: ${reason}`);
                 if (this.order) this.loadOrder(this.order.id);
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
@@ -322,7 +362,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         if (!this.order) return;
         this.isSubmitting = true;
         const dto: OrderActionDto = {
-            currentUserId: this.auth.userId(),
+            currentUserId: this._userId,
             nextStatus: this.selectedOrderStatus,
             role: this.apiRole,
             note: this.orderStatusNote || 'تغيير حالة الأمر',
@@ -331,10 +371,11 @@ export class OrderDetail implements OnInit, AfterViewInit {
             next: () => {
                 this.isSubmitting = false;
                 this.showOrderStatusModal = false;
+                this.cdr.markForCheck();
                 this.toast.success('تم التحديث', `تم تغيير حالة الأمر إلى "${this.ORDER_STATUS_LABELS[this.selectedOrderStatus]}"`);
                 if (this.order) this.loadOrder(this.order.id);
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
@@ -343,7 +384,9 @@ export class OrderDetail implements OnInit, AfterViewInit {
         [ApiOrderStatus.PendingSalesManager]: 'بانتظار مدير المبيعات',
         [ApiOrderStatus.PendingSupervisor]: 'بانتظار المشرف',
         [ApiOrderStatus.InProgress]: 'قيد التنفيذ',
+        [ApiOrderStatus.PendingQR]: 'بانتظار تأكيد QR',
         [ApiOrderStatus.Completed]: 'مكتمل',
+        [ApiOrderStatus.Closed]: 'مغلق',
         [ApiOrderStatus.Returned]: 'مُعاد',
         [ApiOrderStatus.Cancelled]: 'ملغي',
     };
@@ -367,11 +410,12 @@ export class OrderDetail implements OnInit, AfterViewInit {
             next: () => {
                 this.isSubmitting = false;
                 this.showAssignModal = false;
+                this.cdr.markForCheck();
                 const tech = this.availableTechnicians.find(t => t.id === this.selectedTechId);
                 this.toast.success('تم التعيين', `تم تعيين ${tech?.name ?? 'الفني'} على الأمر`);
                 this.loadTasks();
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
@@ -394,11 +438,82 @@ export class OrderDetail implements OnInit, AfterViewInit {
             next: () => {
                 this.isSubmitting = false;
                 this.showStatusModal = false;
+                this.cdr.markForCheck();
                 this.toast.success('تم التحديث', `تم تحديث حالة المهمة إلى "${this.taskStatusStatusLabel}"`);
                 this.loadTasks();
+
+                // If technician completes task, check if we should move order to PendingQR
+                if (this.newTaskStatus === ApiTaskStatus.Completed && this.order && this.order.status === ApiOrderStatus.InProgress) {
+                    this.moveToPendingQR();
+                }
+
                 if (this.order) this.loadHistory(this.order.id);
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
+        });
+    }
+
+    private moveToPendingQR() {
+        if (!this.order) return;
+        const dto: OrderActionDto = {
+            currentUserId: this._userId,
+            nextStatus: ApiOrderStatus.PendingQR,
+            role: this.apiRole,
+            note: 'تم إكمال المهام وبانتظار مسح QR',
+        };
+        this.ordersService.handleOrder(this.order.id, dto).subscribe({
+            next: () => { if (this.order) this.loadOrder(this.order.id); }
+        });
+    }
+
+    // ─── QR Scanning ───
+    showScanModal = false;
+    scanToken = '';
+
+    openScanModal() {
+        this.scanToken = '';
+        this.showScanModal = true;
+    }
+
+    submitScan() {
+        if (!this.order || !this.scanToken.trim()) return;
+        this.isSubmitting = true;
+        this.ordersService.verifyQr({ orderId: this.order!.id, token: this.scanToken }).subscribe({
+            next: () => {
+                this.isSubmitting = false;
+                this.showScanModal = false;
+                this.cdr.markForCheck();
+                this.toast.success('تم التحقق', 'تم إغلاق الأمر بنجاح عبر رمز QR');
+                this.loadOrder(this.order!.id);
+            },
+            error: () => {
+                this.isSubmitting = false;
+                this.cdr.markForCheck();
+                this.toast.error('خطأ', 'رمز QR غير صحيح أو منتهي الصالحية');
+            },
+        });
+    }
+
+    // ─── Admin Override Close ───
+    submitOverrideClose() {
+        if (!this.order) return;
+        if (!confirm('هل أنت متأكد من إغلاق الأمر يدوياً بدون مسح QR؟')) return;
+
+        this.isSubmitting = true;
+        const dto: OrderActionDto = {
+            currentUserId: this._userId,
+            nextStatus: ApiOrderStatus.Closed,
+            role: ApiRole.Admin,
+            note: 'إغلاق إداري (تجاوز QR)',
+        };
+        this.ordersService.handleOrder(this.order!.id, dto).subscribe({
+            next: () => {
+                this.isSubmitting = false;
+                this.cdr.markForCheck();
+                this.toast.success('تم الإغلاق', 'تم إغلاق الأمر يدوياً');
+                this.loadOrder(this.order!.id);
+            },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
@@ -443,10 +558,11 @@ export class OrderDetail implements OnInit, AfterViewInit {
             next: () => {
                 this.isSubmitting = false;
                 this.showEvidenceModal = false;
+                this.cdr.markForCheck();
                 this.toast.success('تم الرفع', 'تم رفع الأدلة بنجاح');
                 if (this.order) this.loadHistory(this.order.id);
             },
-            error: () => { this.isSubmitting = false; },
+            error: () => { this.isSubmitting = false; this.cdr.markForCheck(); },
         });
     }
 
