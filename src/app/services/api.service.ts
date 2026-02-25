@@ -33,6 +33,10 @@ export class ApiService {
             .get<ApiResponse<T>>(`${this.baseUrl}${path}`, { headers: this.getHeaders(), params: httpParams })
             .pipe(
                 map(res => {
+                    // If the response doesn't have the 'succeeded' property, it's likely unwrapped data
+                    if (res && res.succeeded === undefined) {
+                        return res as any as T;
+                    }
                     if (!res.succeeded) {
                         const errMsg = res.errors?.join(', ') || res.message || 'خطأ غير معروف';
                         this.toast.error('خطأ', errMsg);
@@ -56,6 +60,9 @@ export class ApiService {
             .post<ApiResponse<T>>(`${this.baseUrl}${path}`, body, { headers: this.getHeaders() })
             .pipe(
                 map(res => {
+                    if (res && res.succeeded === undefined) {
+                        return res as any as T;
+                    }
                     if (!res.succeeded) {
                         const errMsg = res.errors?.join(', ') || res.message || 'خطأ غير معروف';
                         this.toast.error('خطأ', errMsg);
@@ -85,6 +92,9 @@ export class ApiService {
             .post<ApiResponse<T>>(`${this.baseUrl}${path}`, formData, { headers })
             .pipe(
                 map(res => {
+                    if (res && res.succeeded === undefined) {
+                        return res as any as T;
+                    }
                     if (!res.succeeded) {
                         throw new Error(res.errors?.join(', ') || res.message);
                     }
@@ -102,6 +112,9 @@ export class ApiService {
             .delete<ApiResponse<T>>(`${this.baseUrl}${path}`, { headers: this.getHeaders() })
             .pipe(
                 map(res => {
+                    if (res && res.succeeded === undefined) {
+                        return res as any as T;
+                    }
                     if (!res.succeeded) {
                         const errMsg = res.errors?.join(', ') || res.message || 'خطأ غير معروف';
                         this.toast.error('خطأ', errMsg);

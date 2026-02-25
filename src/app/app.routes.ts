@@ -10,6 +10,7 @@ import { Schedule } from './pages/schedule/schedule';
 import { ScanQR } from './pages/scan-qr/scan-qr';
 import { Reports } from './pages/reports/reports';
 import { Settings } from './pages/settings/settings';
+import { Tasks } from './pages/tasks/tasks';
 import { authGuard } from './auth.guard';
 
 
@@ -27,6 +28,7 @@ export const routes: Routes = [
             { path: 'orders/:id/edit', component: OrderCreate },
             { path: 'orders/:id', component: OrderDetail },
             { path: 'jobs', component: Orders },
+            { path: 'tasks', component: Tasks },
             { path: 'schedule', component: Schedule },
             { path: 'scan-qr', component: ScanQR },
             { path: 'reports', component: Reports },
@@ -34,3 +36,4 @@ export const routes: Routes = [
         ]
     }
 ];
+

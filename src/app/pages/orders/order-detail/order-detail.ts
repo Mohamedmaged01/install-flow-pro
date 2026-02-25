@@ -103,6 +103,11 @@ export class OrderDetail implements OnInit, AfterViewInit {
     returnCustomReason = '';
     returnNote = '';
 
+    // ─── Change Order Status modal ───
+    showOrderStatusModal = false;
+    selectedOrderStatus: ApiOrderStatus = ApiOrderStatus.PendingSalesManager;
+    orderStatusNote = '';
+
     constructor(
         public auth: AuthService,
         private route: ActivatedRoute,
@@ -119,25 +124,27 @@ export class OrderDetail implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
-        if (this.order?.qrToken) this.generateQRImage(this.order.qrToken);
+        // Removed generateQRImage from here to prevent ExpressionChangedAfterItHasBeenCheckedError
+        // The QR is already generated in loadOrder() when the data arrives.
     }
 
     loadOrder(id: number) {
         this.isLoading = true;
-        this.ordersService.getAll().subscribe({
-            next: (orders) => {
-                this.order = orders.find(o => o.id === id) ?? null;
+        this.ordersService.getById(id).subscribe({
+            next: (order) => {
+                this.order = order;
                 this.isLoading = false;
                 if (this.order) {
                     this.loadHistory(id);
                     this.loadTasks();
                     if (this.order.departmentId) this.loadTechnicians(this.order.departmentId);
                     if (this.order.qrToken) this.generateQRImage(this.order.qrToken);
-                } else {
-                    this.toast.error('غير موجود', 'لم يتم العثور على الأمر');
                 }
             },
-            error: () => { this.isLoading = false; },
+            error: () => {
+                this.isLoading = false;
+                this.toast.error('غير موجود', 'لم يتم العثور على الأمر');
+            },
         });
     }
 
@@ -149,9 +156,13 @@ export class OrderDetail implements OnInit, AfterViewInit {
     }
 
     loadTasks() {
+        // Gate for 403: Sales Reps are typically not allowed to see all tasks at the Tasks controller
+        // Only load if user is not a Sales Rep or if the backend role permits it.
+        if (this.isSalesRep) return;
+
         this.tasksService.getAll().subscribe({
             next: (tasks) => {
-                this.tasks = tasks.filter(t => t.orderId === this.order?.id);
+                this.tasks = (tasks || []).filter(t => t.orderId === this.order?.id);
             },
             error: () => { },
         });
@@ -218,7 +229,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         if (!this.order) return;
         this.isSubmitting = true;
         const dto: OrderActionDto = {
-            currentUserId: parseInt(this.auth.user()?.id ?? '0'),
+            currentUserId: this.auth.userId(),
             nextStatus: ApiOrderStatus.PendingSupervisor,
             role: ApiRole.SalesManager,
             note: 'تمت الموافقة',
@@ -238,7 +249,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         if (!this.order) return;
         this.isSubmitting = true;
         const dto: OrderActionDto = {
-            currentUserId: parseInt(this.auth.user()?.id ?? '0'),
+            currentUserId: this.auth.userId(),
             nextStatus: ApiOrderStatus.Cancelled,
             role: ApiRole.SalesManager,
             note: 'تم الرفض',
@@ -270,7 +281,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         if (!this.order) return;
         this.isSubmitting = true;
         const dto: OrderActionDto = {
-            currentUserId: parseInt(this.auth.user()?.id ?? '0'),
+            currentUserId: this.auth.userId(),
             nextStatus: ApiOrderStatus.Returned,
             role: this.apiRole,
             note: reason + (this.returnNote ? ' — ' + this.returnNote : ''),
@@ -294,6 +305,48 @@ export class OrderDetail implements OnInit, AfterViewInit {
             default: return ApiRole.Admin;
         }
     }
+
+    // ─── Change Order Status (generic) ───
+    get allOrderStatuses(): ApiOrderStatus[] {
+        return Object.values(ApiOrderStatus);
+    }
+
+    openOrderStatusModal() {
+        if (!this.order) return;
+        this.selectedOrderStatus = this.order.status;
+        this.orderStatusNote = '';
+        this.showOrderStatusModal = true;
+    }
+
+    submitOrderStatusChange() {
+        if (!this.order) return;
+        this.isSubmitting = true;
+        const dto: OrderActionDto = {
+            currentUserId: this.auth.userId(),
+            nextStatus: this.selectedOrderStatus,
+            role: this.apiRole,
+            note: this.orderStatusNote || 'تغيير حالة الأمر',
+        };
+        this.ordersService.handleOrder(this.order.id, dto).subscribe({
+            next: () => {
+                this.isSubmitting = false;
+                this.showOrderStatusModal = false;
+                this.toast.success('تم التحديث', `تم تغيير حالة الأمر إلى "${this.ORDER_STATUS_LABELS[this.selectedOrderStatus]}"`);
+                if (this.order) this.loadOrder(this.order.id);
+            },
+            error: () => { this.isSubmitting = false; },
+        });
+    }
+
+    readonly ORDER_STATUS_LABELS: Record<ApiOrderStatus, string> = {
+        [ApiOrderStatus.Draft]: 'مسودة',
+        [ApiOrderStatus.PendingSalesManager]: 'بانتظار مدير المبيعات',
+        [ApiOrderStatus.PendingSupervisor]: 'بانتظار المشرف',
+        [ApiOrderStatus.InProgress]: 'قيد التنفيذ',
+        [ApiOrderStatus.Completed]: 'مكتمل',
+        [ApiOrderStatus.Returned]: 'مُعاد',
+        [ApiOrderStatus.Cancelled]: 'ملغي',
+    };
 
     // ─── Assign Technician ───
     openAssignModal() {

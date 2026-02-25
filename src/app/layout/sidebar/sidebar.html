@@ -10,7 +10,7 @@
 
     <!-- Navigation -->
     <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-        @for (item of menuItems; track item.route) {
+        @for (item of menuItems(); track item.route) {
         <a [routerLink]="item.route" routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
             class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 group">
             <lucide-icon [name]="item.icon"

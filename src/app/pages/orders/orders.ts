@@ -3,7 +3,10 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { OrdersService } from '../../services/orders.service';
-import { ApiOrder, ApiOrderStatus, ApiPriority } from '../../models/api-models';
+import { TasksService } from '../../services/tasks.service';
+import { DepartmentsService } from '../../services/departments.service';
+import { ToastService } from '../../services/toast.service';
+import { ApiOrder, ApiOrderStatus, ApiPriority, AssignTaskDto, ApiRole, ApiTask, ApiTaskStatus, TaskStatusUpdateDto } from '../../models/api-models';
 import { UserRole } from '../../models';
 import { StatusBadge } from '../../components/status-badge/status-badge';
 import {
@@ -45,6 +48,30 @@ export class Orders implements OnInit {
     readonly STATUS_LABEL_MAP = STATUS_LABEL_MAP;
     readonly UserRole = UserRole;
 
+    readonly TASK_STATUS_LABELS: Record<ApiTaskStatus, string> = {
+        [ApiTaskStatus.Assigned]: 'مُعيَّن',
+        [ApiTaskStatus.Accepted]: 'مقبول',
+        [ApiTaskStatus.Enroute]: 'في الطريق',
+        [ApiTaskStatus.Onsite]: 'في الموقع',
+        [ApiTaskStatus.InProgress]: 'جارٍ',
+        [ApiTaskStatus.Completed]: 'مكتمل',
+        [ApiTaskStatus.Returned]: 'مُعاد',
+        [ApiTaskStatus.OnHold]: 'معلّق',
+    };
+
+    readonly TASK_STATUS_COLORS: Record<ApiTaskStatus, string> = {
+        [ApiTaskStatus.Assigned]: 'bg-blue-100 text-blue-700',
+        [ApiTaskStatus.Accepted]: 'bg-indigo-100 text-indigo-700',
+        [ApiTaskStatus.Enroute]: 'bg-purple-100 text-purple-700',
+        [ApiTaskStatus.Onsite]: 'bg-orange-100 text-orange-700',
+        [ApiTaskStatus.InProgress]: 'bg-amber-100 text-amber-700',
+        [ApiTaskStatus.Completed]: 'bg-emerald-100 text-emerald-700',
+        [ApiTaskStatus.Returned]: 'bg-red-100 text-red-700',
+        [ApiTaskStatus.OnHold]: 'bg-yellow-100 text-yellow-700',
+    };
+
+    readonly ALL_TASK_STATUSES = Object.values(ApiTaskStatus);
+
     // Filters
     statusFilter: ApiOrderStatus | 'all' = 'all';
     priorityFilter: ApiPriority | 'all' = 'all';
@@ -52,8 +79,14 @@ export class Orders implements OnInit {
     searchQuery = '';
     myTasksOnly = false;
 
+    // Snapshot of current user ID — set once in ngOnInit to avoid NG0100
+    // (auth signal updating after change detection when restoring session)
+    currentUserId = '0';
+
     // Data
     allOrders: ApiOrder[] = [];
+    allTasks: ApiTask[] = [];
+    tasksByOrder: Record<number, ApiTask[]> = {};
     isLoading = false;
 
     // Pagination
@@ -63,15 +96,21 @@ export class Orders implements OnInit {
     constructor(
         public auth: AuthService,
         private ordersApi: OrdersService,
+        private tasksService: TasksService,
+        private departmentsService: DepartmentsService,
+        private toast: ToastService,
         private router: Router,
     ) { }
 
     ngOnInit() {
+        // Snapshot user ID as a plain property to avoid NG0100
+        this.currentUserId = this.auth.user()?.id ?? '0';
         // Technicians default to "My Tasks" view
         if (this.auth.userRole() === UserRole.TECHNICIAN) {
             this.myTasksOnly = true;
         }
         this.loadOrders();
+        this.loadTasks();
     }
 
     loadOrders() {
@@ -86,13 +125,32 @@ export class Orders implements OnInit {
         });
     }
 
+    loadTasks() {
+        this.tasksService.getAll().subscribe({
+            next: (tasks) => {
+                this.allTasks = tasks;
+                // Group by orderId for O(1) lookup in template
+                this.tasksByOrder = tasks.reduce((acc, t) => {
+                    if (!acc[t.orderId]) acc[t.orderId] = [];
+                    acc[t.orderId].push(t);
+                    return acc;
+                }, {} as Record<number, ApiTask[]>);
+            },
+            error: () => { },
+        });
+    }
+
+    getOrderTasks(orderId: number): ApiTask[] {
+        return this.tasksByOrder[orderId] ?? [];
+    }
+
     get filteredOrders(): ApiOrder[] {
         let orders = this.allOrders;
 
         // My Tasks filter: filter by createdByUserId matching current user
         if (this.myTasksOnly) {
-            const userId = this.auth.user()?.id;
-            if (userId) {
+            const userId = this.currentUserId;
+            if (userId && userId !== '0') {
                 orders = orders.filter(o => String((o as any).createdByUserId) === String(userId));
             }
         }
@@ -191,5 +249,82 @@ export class Orders implements OnInit {
 
     onFilterChange() {
         this.currentPage = 1;
+    }
+
+    // ─── Quick Create Task ───
+    showQuickTaskModal = false;
+    quickTaskForm = { orderId: 0, technicianId: 0, notes: '' };
+    quickTaskOrderCity = '';
+    quickTaskTechnicians: { id: number; name: string }[] = [];
+    isLoadingTechs = false;
+    isSubmittingTask = false;
+
+    openQuickCreateTask(order: ApiOrder) {
+        this.quickTaskForm = { orderId: order.id, technicianId: 0, notes: '' };
+        this.quickTaskOrderCity = order.city;
+        this.quickTaskTechnicians = [];
+        this.isLoadingTechs = true;
+        this.showQuickTaskModal = true;
+        this.departmentsService.getUsers(order.branchId, order.departmentId).subscribe({
+            next: (users) => {
+                this.quickTaskTechnicians = users
+                    .filter(u => u.role === ApiRole.Technician)
+                    .map(u => ({ id: u.id, name: u.name }));
+                this.isLoadingTechs = false;
+            },
+            error: () => { this.isLoadingTechs = false; },
+        });
+    }
+
+    submitQuickTask() {
+        if (!this.quickTaskForm.technicianId) return;
+        this.isSubmittingTask = true;
+        const dto: AssignTaskDto = {
+            orderId: this.quickTaskForm.orderId,
+            technicianId: +this.quickTaskForm.technicianId,
+            notes: this.quickTaskForm.notes,
+        };
+        this.tasksService.assign(dto).subscribe({
+            next: () => {
+                this.isSubmittingTask = false;
+                this.showQuickTaskModal = false;
+                this.toast.success('تم الإنشاء', `تم تعيين مهمة للأمر #${this.quickTaskForm.orderId}`);
+                this.loadTasks(); // refresh the task badges
+            },
+            error: () => { this.isSubmittingTask = false; },
+        });
+    }
+
+    // ─── Edit Task Status ───
+    showEditTaskModal = false;
+    editingTask: ApiTask | null = null;
+    editTaskStatus: ApiTaskStatus = ApiTaskStatus.Assigned;
+    editTaskNote = '';
+    isUpdatingTask = false;
+
+    openEditTaskModal(task: ApiTask, event: Event) {
+        event.stopPropagation();
+        this.editingTask = task;
+        this.editTaskStatus = task.status;
+        this.editTaskNote = '';
+        this.showEditTaskModal = true;
+    }
+
+    submitTaskStatusUpdate() {
+        if (!this.editingTask) return;
+        this.isUpdatingTask = true;
+        const dto: TaskStatusUpdateDto = {
+            newStatus: this.editTaskStatus,
+            notes: this.editTaskNote,
+        };
+        this.tasksService.updateStatus(this.editingTask.id, dto).subscribe({
+            next: () => {
+                this.isUpdatingTask = false;
+                this.showEditTaskModal = false;
+                this.toast.success('تم التحديث', `تم تحديث حالة المهمة إلى "${this.TASK_STATUS_LABELS[this.editTaskStatus]}"`);
+                this.loadTasks();
+            },
+            error: () => { this.isUpdatingTask = false; },
+        });
     }
 }

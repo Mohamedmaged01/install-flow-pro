@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -60,6 +60,7 @@ export class OrderCreate implements OnInit {
         private branchesApi: BranchesService,
         private departmentsApi: DepartmentsService,
         private itemsApi: ItemsService,
+        private cdr: ChangeDetectorRef,
     ) { }
 
     ngOnInit() {
@@ -76,19 +77,20 @@ export class OrderCreate implements OnInit {
                     this.selectedBranchId = branches[0].id;
                     this.loadDepartments(this.selectedBranchId);
                 }
+                this.cdr.detectChanges();
             },
             error: () => { },
         });
 
         this.itemsApi.getAll().subscribe({
-            next: (items) => { this.availableItems = items; },
+            next: (items) => { this.availableItems = items; this.cdr.detectChanges(); },
             error: () => { },
         });
     }
 
     loadDepartments(branchId: number) {
         this.departmentsApi.getByBranch(branchId).subscribe({
-            next: (depts) => { this.apiDepartments = depts; },
+            next: (depts) => { this.apiDepartments = depts; this.cdr.detectChanges(); },
             error: () => { },
         });
     }
@@ -158,7 +160,7 @@ export class OrderCreate implements OnInit {
             priority: this.form.priority,
             branchId: this.selectedBranchId || 1,
             departmentId: parseInt(this.form.departmentId) || 0,
-            createdByUserId: parseInt(this.auth.user()?.id ?? '0') || 0,
+            createdByUserId: this.auth.userId(),
             items: this.orderItemDtos.length > 0 ? this.orderItemDtos : null,
         };
 

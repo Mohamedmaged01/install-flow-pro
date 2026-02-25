@@ -37,6 +37,13 @@
                 إرجاع
             </button>
             }
+            @if (isAdmin || isSupervisor || isSalesManager) {
+            <button (click)="openOrderStatusModal()" [disabled]="isSubmitting"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors disabled:opacity-50">
+                <lucide-icon [name]="ShieldCheck" class="size-4"></lucide-icon>
+                تغيير الحالة
+            </button>
+            }
             @if (canEditOrder) {
             <button (click)="editOrder()"
                 class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 transition-colors">
@@ -379,6 +386,45 @@
                 </button>
                 <button (click)="showEvidenceModal = false"
                     class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+    <!-- ══ CHANGE ORDER STATUS MODAL ══ -->
+    @if (showOrderStatusModal) {
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showOrderStatusModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" (click)="$event.stopPropagation()">
+            <h3 class="text-lg font-bold text-slate-900 mb-1">تغيير حالة الأمر</h3>
+            <p class="text-sm text-slate-400 mb-4">اختر الحالة الجديدة لهذا الأمر</p>
+
+            <div class="space-y-2 mb-4">
+                @for (status of allOrderStatuses; track status) {
+                <button (click)="selectedOrderStatus = status"
+                    [class]="selectedOrderStatus === status
+                        ? 'w-full text-right px-4 py-3 rounded-xl border-2 border-indigo-500 bg-indigo-50 text-sm font-bold text-indigo-800 cursor-pointer'
+                        : 'w-full text-right px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer transition-all'">
+                    {{ ORDER_STATUS_LABELS[status] }}
+                </button>
+                }
+            </div>
+
+            <div class="mb-5">
+                <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات (اختياري)</label>
+                <textarea [(ngModel)]="orderStatusNote" rows="2" placeholder="سبب التغيير..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400 resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button (click)="submitOrderStatusChange()"
+                    [disabled]="selectedOrderStatus === order!.status || isSubmitting"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 transition-all">
+                    @if (isSubmitting) { جاري الحفظ... } @else { تأكيد التغيير }
+                </button>
+                <button (click)="showOrderStatusModal = false"
+                    class="flex-1 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
                     إلغاء
                 </button>
             </div>

@@ -91,6 +91,7 @@
                         <th class="px-6 py-3.5">المدينة</th>
                         <th class="px-6 py-3.5">الفرع / القسم</th>
                         <th class="px-6 py-3.5">الحالة</th>
+                        <th class="px-6 py-3.5">المهام</th>
                         <th class="px-6 py-3.5">الموعد</th>
                         <th class="px-6 py-3.5">إجراء</th>
                     </tr>
@@ -130,12 +131,43 @@
                             <span class="text-slate-400 text-sm">—</span>
                             }
                         </td>
+                        <!-- Tasks column -->
                         <td class="px-6 py-4">
-                            <button
-                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors opacity-0 group-hover:opacity-100">
-                                <lucide-icon [name]="Eye" class="size-3.5"></lucide-icon>
-                                عرض
-                            </button>
+                            <div class="flex flex-wrap gap-1">
+                                @for (task of getOrderTasks(order.id); track task.id) {
+                                @if (isSupervisorOrAbove()) {
+                                <button (click)="openEditTaskModal(task, $event)"
+                                    [class]="'px-2 py-0.5 rounded-md text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity ' + TASK_STATUS_COLORS[task.status]"
+                                    [title]="task.technicianName">
+                                    {{ TASK_STATUS_LABELS[task.status] }}
+                                </button>
+                                } @else {
+                                <span
+                                    [class]="'px-2 py-0.5 rounded-md text-xs font-bold ' + TASK_STATUS_COLORS[task.status]"
+                                    [title]="task.technicianName">
+                                    {{ TASK_STATUS_LABELS[task.status] }}
+                                </span>
+                                }
+                                } @empty {
+                                <span class="text-slate-300 text-xs">—</span>
+                                }
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-1.5">
+                                <button (click)="$event.stopPropagation(); viewOrder(order.id)"
+                                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors opacity-0 group-hover:opacity-100">
+                                    <lucide-icon [name]="Eye" class="size-3.5"></lucide-icon>
+                                    عرض
+                                </button>
+                                @if (isSupervisorOrAbove()) {
+                                <button (click)="$event.stopPropagation(); openQuickCreateTask(order)"
+                                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors opacity-0 group-hover:opacity-100">
+                                    <lucide-icon [name]="Plus" class="size-3.5"></lucide-icon>
+                                    مهمة
+                                </button>
+                                }
+                            </div>
                         </td>
                     </tr>
                     }
@@ -183,4 +215,96 @@
         </div>
         }
     </div>
+    <!-- ══ QUICK CREATE TASK MODAL ══ -->
+    @if (showQuickTaskModal) {
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showQuickTaskModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4" (click)="$event.stopPropagation()">
+            <div>
+                <h3 class="text-lg font-extrabold text-slate-900">إنشاء مهمة</h3>
+                <p class="text-sm text-slate-400 mt-0.5">أمر #{{ quickTaskForm.orderId }} — {{ quickTaskOrderCity }}</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">الفني *</label>
+                @if (isLoadingTechs) {
+                <p class="text-sm text-slate-400 py-2">جاري تحميل الفنيين...</p>
+                } @else if (quickTaskTechnicians.length === 0) {
+                <p class="text-sm text-amber-600 py-2">لا يوجد فنيون متاحون في هذا القسم</p>
+                } @else {
+                <select [(ngModel)]="quickTaskForm.technicianId"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                    <option [value]="0" disabled>― اختر فنيًا ―</option>
+                    @for (tech of quickTaskTechnicians; track tech.id) {
+                    <option [value]="tech.id">{{ tech.name }}</option>
+                    }
+                </select>
+                }
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">ملاحظات (اختياري)</label>
+                <textarea [(ngModel)]="quickTaskForm.notes" rows="2" placeholder="تعليمات للفني..."
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-1">
+                <button (click)="showQuickTaskModal = false"
+                    class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                    إلغاء
+                </button>
+                <button (click)="submitQuickTask()" [disabled]="!quickTaskForm.technicianId || isSubmittingTask"
+                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 transition-all">
+                    {{ isSubmittingTask ? 'جاري...' : 'إنشاء المهمة' }}
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+    <!-- ══ EDIT TASK STATUS MODAL ══ -->
+    @if (showEditTaskModal && editingTask) {
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showEditTaskModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4" (click)="$event.stopPropagation()">
+            <div>
+                <h3 class="text-lg font-extrabold text-slate-900">تحديث حالة المهمة</h3>
+                <p class="text-sm text-slate-400 mt-0.5">فني: {{ editingTask.technicianName }} — أمر #{{
+                    editingTask.orderId }}</p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">الحالة الجديدة</label>
+                <div class="grid grid-cols-2 gap-1.5">
+                    @for (s of ALL_TASK_STATUSES; track s) {
+                    <button (click)="editTaskStatus = s"
+                        [class]="editTaskStatus === s
+                            ? 'px-3 py-2 rounded-xl text-xs font-bold border-2 border-blue-500 bg-blue-50 text-blue-800'
+                            : 'px-3 py-2 rounded-xl text-xs font-medium border border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50/50 transition-all'">
+                        {{ TASK_STATUS_LABELS[s] }}
+                    </button>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">ملاحظة (اختياري)</label>
+                <textarea [(ngModel)]="editTaskNote" rows="2" placeholder="سبب التغيير..."
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button (click)="showEditTaskModal = false"
+                    class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                    إلغاء
+                </button>
+                <button (click)="submitTaskStatusUpdate()"
+                    [disabled]="editingTask.status === editTaskStatus || isUpdatingTask"
+                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all">
+                    {{ isUpdatingTask ? 'جاري...' : 'حفظ' }}
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
 </div>

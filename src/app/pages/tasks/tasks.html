@@ -1,0 +1,219 @@
+<div class="space-y-5">
+    <!-- Header -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">مهامي</h2>
+            <p class="text-slate-400 text-sm mt-1">جميع المهام المُسنَدة إليك</p>
+        </div>
+        <div class="flex items-center gap-2">
+            @if (canCreateTask) {
+            <button (click)="openCreateModal()"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm transition-all">
+                <lucide-icon [name]="Plus" class="size-4"></lucide-icon>
+                إنشاء مهمة
+            </button>
+            }
+            <button (click)="loadTasks()"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white/80 border border-slate-200 hover:bg-slate-50 transition-colors">
+                <lucide-icon [name]="RefreshCw" class="size-4"></lucide-icon>
+                تحديث
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading) {
+    <div class="flex justify-center py-16">
+        <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+    } @else {
+
+    <!-- Active Tasks -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/50 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100/50 flex items-center gap-2">
+            <lucide-icon [name]="ClipboardList" class="size-5 text-blue-600"></lucide-icon>
+            <h3 class="font-bold text-slate-800">المهام الجارية</h3>
+            <span class="ml-auto text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                {{ activeTasks.length }}
+            </span>
+        </div>
+
+        @if (activeTasks.length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+            <lucide-icon [name]="CheckCircle" class="size-10 mb-3 opacity-40 text-emerald-400"></lucide-icon>
+            <p class="font-medium text-sm">لا توجد مهام جارية</p>
+        </div>
+        } @else {
+        <div class="divide-y divide-slate-50">
+            @for (task of activeTasks; track task.id) {
+            <div class="p-5 hover:bg-blue-50/30 transition-colors">
+                <div class="flex items-start gap-4">
+                    <!-- Status badge -->
+                    <span [class]="'px-2.5 py-1 rounded-lg text-xs font-bold ' + TASK_STATUS_COLORS[task.status]">
+                        {{ TASK_STATUS_LABELS[task.status] }}
+                    </span>
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-mono font-bold text-blue-600 text-sm">أمر #{{ task.orderId }}</span>
+                            <span class="text-xs text-slate-400">{{ getTimeAgo(task.createdAt) }}</span>
+                        </div>
+                        @if (task.notes) {
+                        <p class="text-sm text-slate-600 mb-2">{{ task.notes }}</p>
+                        }
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button (click)="viewOrder(task.orderId)"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+                            <lucide-icon [name]="ChevronRight" class="size-3.5"></lucide-icon>
+                            الأمر
+                        </button>
+                        <button (click)="openStatusModal(task)"
+                            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            <lucide-icon [name]="Play" class="size-3.5"></lucide-icon>
+                            تحديث الحالة
+                        </button>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+        }
+    </div>
+
+    <!-- Completed Tasks -->
+    @if (completedTasks.length > 0) {
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/50 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100/50 flex items-center gap-2">
+            <lucide-icon [name]="CheckCircle" class="size-5 text-emerald-500"></lucide-icon>
+            <h3 class="font-bold text-slate-700">المهام المنجزة</h3>
+            <span class="ml-auto text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                {{ completedTasks.length }}
+            </span>
+        </div>
+        <div class="divide-y divide-slate-50">
+            @for (task of completedTasks; track task.id) {
+            <div class="p-5 flex items-center gap-4 opacity-70">
+                <span [class]="'px-2.5 py-1 rounded-lg text-xs font-bold ' + TASK_STATUS_COLORS[task.status]">
+                    {{ TASK_STATUS_LABELS[task.status] }}
+                </span>
+                <span class="font-mono text-sm text-blue-600">أمر #{{ task.orderId }}</span>
+                <span class="text-xs text-slate-400 mr-auto">{{ getTimeAgo(task.updatedAt ?? task.createdAt) }}</span>
+                <button (click)="viewOrder(task.orderId)"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
+                    <lucide-icon [name]="ChevronRight" class="size-3.5"></lucide-icon>
+                    عرض
+                </button>
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    } <!-- end @else -->
+
+    <!-- Status Update Modal -->
+    @if (showStatusModal && activeTask) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <h3 class="text-lg font-extrabold text-slate-800">تحديث حالة المهمة</h3>
+            <p class="text-sm text-slate-500">أمر #{{ activeTask.orderId }}</p>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">الحالة الجديدة</label>
+                    <select [(ngModel)]="newStatus"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                        @for (s of nextStatuses; track s) {
+                        <option [value]="s">{{ TASK_STATUS_LABELS[s] }}</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1.5">ملاحظة (اختياري)</label>
+                    <textarea [(ngModel)]="statusNote" rows="2"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none"
+                        placeholder="أي ملاحظات..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button (click)="closeStatusModal()"
+                    class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                    إلغاء
+                </button>
+                <button (click)="submitStatusUpdate()" [disabled]="isSubmitting"
+                    class="flex-1 py-2.5 rounded-xl bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                    {{ isSubmitting ? 'جاري الحفظ...' : 'حفظ' }}
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+    <!-- ══ CREATE TASK MODAL ══ -->
+    @if (showCreateModal) {
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        (click)="showCreateModal = false">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4" (click)="$event.stopPropagation()">
+            <div>
+                <h3 class="text-lg font-extrabold text-slate-900">إنشاء مهمة جديدة</h3>
+                <p class="text-sm text-slate-400 mt-0.5">تعيين فني على أمر تركيب</p>
+            </div>
+
+            <!-- Order picker -->
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">الأمر *</label>
+                <select [(ngModel)]="createForm.orderId" (ngModelChange)="onOrderSelected()"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                    <option [value]="0" disabled>― اختر أمرًا ―</option>
+                    @for (order of availableOrders; track order.id) {
+                    <option [value]="order.id">أمر #{{ order.id }} — {{ order.city }}</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Technician picker -->
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">الفني *</label>
+                @if (isLoadingTechs) {
+                <p class="text-sm text-slate-400 py-2">جاري تحميل الفنيين...</p>
+                } @else {
+                <select [(ngModel)]="createForm.technicianId"
+                    [disabled]="!createForm.orderId || availableTechnicians.length === 0"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:opacity-50">
+                    <option [value]="0" disabled>
+                        {{ !createForm.orderId ? '― اختر أمرًا أولاً ―' : (availableTechnicians.length === 0 ? 'لا يوجد
+                        فنيون في هذا القسم' : '― اختر فنيًا ―') }}
+                    </option>
+                    @for (tech of availableTechnicians; track tech.id) {
+                    <option [value]="tech.id">{{ tech.name }}</option>
+                    }
+                </select>
+                }
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1.5">ملاحظات (اختياري)</label>
+                <textarea [(ngModel)]="createForm.notes" rows="2" placeholder="تعليمات للفني..."
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-1">
+                <button (click)="showCreateModal = false"
+                    class="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                    إلغاء
+                </button>
+                <button (click)="submitCreateTask()"
+                    [disabled]="!createForm.orderId || !createForm.technicianId || isSubmitting"
+                    class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all">
+                    {{ isSubmitting ? 'جاري...' : 'إنشاء' }}
+                </button>
+            </div>
+        </div>
+    </div>
+    }
+
+</div>

@@ -15,6 +15,11 @@ export class OrdersService {
         return this.api.get<ApiOrder[]>('/Orders', params);
     }
 
+    getById(id: number): Observable<ApiOrder> {
+        return this.api.get<ApiOrder>(`/Orders/${id}`);
+    }
+
+
     create(dto: AddOrderDto): Observable<any> {
         return this.api.post('/Orders', dto);
     }
