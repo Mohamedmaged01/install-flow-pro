@@ -1,8 +1,8 @@
 {
     "rewrites": [
         {
-            "source": "/apex-api/:path*",
-            "destination": "https://gate.erp-apex.com/:path*"
+            "source": "/((?!api/).*)",
+            "destination": "/index.html"
         }
     ]
 }

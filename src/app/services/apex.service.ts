@@ -4,7 +4,7 @@
  * Specs: 1-min cache, max 10 req/s, page size 20
  */
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, map, tap, catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ApexResponse, ApexDocument, ApexQueryParams } from '../models/apex-models';
@@ -43,12 +43,7 @@ export class ApexService {
             return of(cached.data as T);
         }
 
-        const headers = new HttpHeaders({
-            'Content-Type': 'application/json',
-        });
-
         let params = new HttpParams()
-            .set('PassKey', environment.apexPassKey)
             .set('PageNumber', page)
             .set('PageSize', 20);
 
@@ -56,7 +51,7 @@ export class ApexService {
         if (dateTo) params = params.set('DateTo', dateTo);
 
         return this.http
-            .get<ApexResponse<T>>(`${environment.apexUrl}/${path}`, { headers, params })
+            .get<ApexResponse<T>>(`${environment.apexUrl}/${path}`, { params })
             .pipe(
                 map(res => {
                     if (!res.isSuccess) {
