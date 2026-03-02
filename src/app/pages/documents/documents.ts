@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ApexService } from '../../services/apex.service';
-import { ApexDocument } from '../../models/apex-models';
-import { ToastService } from '../../services/toast.service';
+import { ApexDocument, ApexResponse } from '../../models/apex-models';
+import { environment } from '../../../environments/environment';
 import { formatDateUTC3 } from '../../utils/date-utils';
 import {
     LucideAngularModule, FileText, Receipt, Plus, Search, RefreshCw,
@@ -41,7 +41,7 @@ export class Documents implements OnInit {
 
     // Pagination
     currentPage = 1;
-    hasMorePages = true; // assume more until we get < 20 results
+    hasMorePages = true;
 
     // Filters
     dateFrom = '';
@@ -52,9 +52,8 @@ export class Documents implements OnInit {
     expandedCode: string | null = null;
 
     constructor(
-        private apex: ApexService,
+        private http: HttpClient,
         private router: Router,
-        private toast: ToastService,
     ) { }
 
     ngOnInit() {
@@ -70,34 +69,42 @@ export class Documents implements OnInit {
         this.loadDocuments();
     }
 
-    // ─── Load ───
+    // ─── Load (direct HttpClient call) ───
     loadDocuments() {
         this.isLoading = true;
         this.loadError = '';
         this.expandedCode = null;
 
-        const obs = this.activeTab === 'invoices'
-            ? this.apex.getInvoices(this.currentPage, this.dateFrom || undefined, this.dateTo || undefined)
-            : this.apex.getOfferPrices(this.currentPage, this.dateFrom || undefined, this.dateTo || undefined);
+        const endpoint = this.activeTab === 'invoices' ? '/api/invoices' : '/api/offers';
 
-        obs.subscribe({
-            next: (docs) => {
-                this.documents = docs ?? [];
+        let params = new HttpParams()
+            .set('PassKey', environment.apexPassKey)
+            .set('PageNumber', this.currentPage)
+            .set('PageSize', 20);
+
+        if (this.dateFrom) params = params.set('DateFrom', this.dateFrom);
+        if (this.dateTo) params = params.set('DateTo', this.dateTo);
+
+        this.http.get<ApexResponse<ApexDocument[]>>(endpoint, { params }).subscribe({
+            next: (res) => {
+                if (res.isSuccess) {
+                    this.documents = res.data ?? [];
+                } else {
+                    this.documents = [];
+                    this.loadError = res.message || 'APEX returned an error';
+                }
                 this.hasMorePages = this.documents.length >= 20;
                 this.isLoading = false;
             },
             error: (err) => {
                 this.isLoading = false;
-                this.loadError = err?.status === 0
-                    ? 'تعذر الاتصال بخادم APEX (CORS أو شبكة)'
-                    : (err?.error?.message || err?.message || 'خطأ غير معروف');
+                this.loadError = err?.error?.message || err?.message || 'خطأ غير معروف';
                 this.documents = [];
             },
         });
     }
 
     refresh() {
-        this.apex.clearCache();
         this.loadDocuments();
     }
 
@@ -179,13 +186,10 @@ export class Documents implements OnInit {
 
     formatApexDate(dateStr: string): string {
         if (!dateStr) return '—';
-        // APEX dates can be in "ص 10:18:31 2023/10/12" format (Arabic AM/PM)
-        // Try to extract the date part  YYYY/MM/DD
         const match = dateStr.match(/(\d{4}\/\d{1,2}\/\d{1,2})/);
         if (match) {
             return match[1].replace(/\//g, '-');
         }
-        // fallback: try standard ISO parse
         return formatDateUTC3(dateStr);
     }
 }
