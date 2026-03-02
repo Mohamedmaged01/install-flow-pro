@@ -114,60 +114,6 @@
                 </div>
             </div>
 
-            <!-- Items Selector -->
-            <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">
-                <h3 class="text-base font-bold text-slate-800 mb-4">بنود التركيب</h3>
-
-                @if (availableItems.length > 0) {
-                <!-- Grid of available items -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                    @for (item of availableItems; track item.id) {
-                    <button type="button" (click)="addItem(item)"
-                        class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-sm transition-all group">
-                        <span class="font-medium text-slate-700 group-hover:text-blue-700">{{ item.title }}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-400">{{ item.price | number }} ر.س</span>
-                            <lucide-icon [name]="Plus"
-                                class="size-4 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></lucide-icon>
-                        </div>
-                    </button>
-                    }
-                </div>
-                } @else {
-                <p class="text-xs text-slate-400 mb-4">لا تتوفر بنود — سيتم إضافتها من الإعدادات</p>
-                }
-
-                <!-- Selected Items -->
-                @if (selectedItems.length > 0) {
-                <div class="border-t border-slate-100 pt-3 space-y-2">
-                    @for (si of selectedItems; track si.item.id) {
-                    <div class="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
-                        <span class="flex-1 text-sm font-medium text-slate-700">{{ si.item.title }}</span>
-                        <div class="flex items-center gap-1">
-                            <button type="button" (click)="decrementQty(si.item.id)"
-                                class="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100">
-                                <lucide-icon [name]="Minus" class="size-3 text-slate-500"></lucide-icon>
-                            </button>
-                            <span class="w-8 text-center text-sm font-bold text-slate-800">{{ si.qty }}</span>
-                            <button type="button" (click)="incrementQty(si.item.id)"
-                                class="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-100">
-                                <lucide-icon [name]="Plus" class="size-3 text-slate-500"></lucide-icon>
-                            </button>
-                        </div>
-                        <span class="text-xs text-slate-500 w-16 text-left">{{ si.item.price * si.qty | number }}
-                            ر.س</span>
-                        <button type="button" (click)="removeItem(si.item.id)" class="text-red-400 hover:text-red-600">
-                            <lucide-icon [name]="Trash2" class="size-4"></lucide-icon>
-                        </button>
-                    </div>
-                    }
-                    <div class="flex justify-between items-center pt-2 border-t border-slate-100">
-                        <span class="text-xs font-bold text-slate-500">الإجمالي</span>
-                        <span class="text-sm font-bold text-slate-800">{{ totalItemsPrice | number }} ر.س</span>
-                    </div>
-                </div>
-                }
-            </div>
 
             <!-- Notes -->
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-slate-100/50">

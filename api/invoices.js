@@ -9,16 +9,23 @@ module.exports = async function handler(req, res) {
         return res.status(200).end();
     }
 
-    const { PageNumber = '1', PageSize = '20', DateFrom, DateTo } = req.query;
-    const params = new URLSearchParams();
-    params.set('PassKey', PASS_KEY);
-    params.set('PageNumber', String(PageNumber));
-    params.set('PageSize', String(PageSize));
-    if (DateFrom) params.set('DateFrom', String(DateFrom));
-    if (DateTo) params.set('DateTo', String(DateTo));
+    const pn = req.query.PageNumber || req.query.PassKey ? (req.query.PageNumber || '1') : '1';
+    const ps = req.query.PageSize || '20';
+    const df = req.query.DateFrom;
+    const dt = req.query.DateTo;
+
+    // Build URL with encodeURIComponent (matches the format that works)
+    let url = APEX_URL + '?PassKey=' + encodeURIComponent(PASS_KEY)
+        + '&PageNumber=' + encodeURIComponent(pn)
+        + '&PageSize=' + encodeURIComponent(ps);
+    if (df) url += '&DateFrom=' + encodeURIComponent(df);
+    if (dt) url += '&DateTo=' + encodeURIComponent(dt);
 
     try {
-        const r = await fetch(APEX_URL + '?' + params.toString());
+        const r = await fetch(url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+        });
         const data = await r.text();
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
