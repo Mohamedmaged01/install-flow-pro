@@ -1,32 +1,238 @@
-<div class="space-y-6">
+<div class="space-y-5">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
             <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">المستندات</h2>
-            <p class="text-slate-400 text-sm mt-1">عروض الأسعار والفواتير</p>
+            <p class="text-slate-400 text-sm mt-1">عروض الأسعار والفواتير من نظام APEX</p>
         </div>
-        <button (click)="createOrder()"
-            class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg transition-all">
-            <lucide-icon [name]="Plus" class="size-4"></lucide-icon>
-            طلب أمر تركيب
+        <div class="flex items-center gap-2">
+            <button (click)="refresh()"
+                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-slate-600 bg-white/80 border border-slate-200 hover:bg-slate-50 transition-colors">
+                <lucide-icon [name]="RefreshCw" class="size-4"></lucide-icon>
+                تحديث
+            </button>
+            <button (click)="createOrder()"
+                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md hover:shadow-lg transition-all">
+                <lucide-icon [name]="Plus" class="size-4"></lucide-icon>
+                أمر تركيب جديد
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div
+        class="flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-xl p-1 border border-slate-100/50 shadow-sm w-fit">
+        <button (click)="switchTab('offers')"
+            [class]="activeTab === 'offers'
+                ? 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white shadow-sm'
+                : 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all'">
+            <lucide-icon [name]="FileText" class="size-4"></lucide-icon>
+            عروض الأسعار
+        </button>
+        <button (click)="switchTab('invoices')"
+            [class]="activeTab === 'invoices'
+                ? 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white shadow-sm'
+                : 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all'">
+            <lucide-icon [name]="Receipt" class="size-4"></lucide-icon>
+            الفواتير
         </button>
     </div>
 
-    <!-- Placeholder: API not available yet -->
+    <!-- Filters -->
     <div
-        class="bg-white/80 backdrop-blur-sm rounded-2xl p-12 shadow-sm border border-slate-100/50 flex flex-col items-center justify-center text-center gap-4">
-        <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-2">
-            <lucide-icon [name]="FileText" class="size-10 text-slate-400"></lucide-icon>
+        class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/50 p-4 flex flex-wrap gap-3 items-end">
+        <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1.5">تاريخ من</label>
+            <input type="date" [(ngModel)]="dateFrom"
+                class="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-blue-400 min-w-[140px]">
         </div>
-        <h3 class="text-lg font-bold text-slate-700">قيد التطوير</h3>
-        <p class="text-sm text-slate-400 max-w-sm">
-            لا يوجد حاليًا نقطة API مخصصة لعروض الأسعار والفواتير.
-            يمكنك إنشاء أمر تركيب مباشرةً بدون ربطه بمستند.
-        </p>
-        <button (click)="createOrder()"
-            class="mt-2 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
-            <lucide-icon [name]="Plus" class="size-4"></lucide-icon>
-            إنشاء أمر تركيب جديد
+        <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1.5">تاريخ إلى</label>
+            <input type="date" [(ngModel)]="dateTo"
+                class="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:border-blue-400 min-w-[140px]">
+        </div>
+        <button (click)="applyFilter()"
+            class="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+            <lucide-icon [name]="Filter" class="size-4 inline-block ml-1"></lucide-icon>
+            بحث
         </button>
+        @if (dateFrom || dateTo) {
+        <button (click)="clearFilter()"
+            class="px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
+            مسح الفلتر
+        </button>
+        }
+        <!-- Client-side search -->
+        <div class="relative flex-1 min-w-[200px]">
+            <lucide-icon [name]="Search"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 size-4"></lucide-icon>
+            <input type="text" [(ngModel)]="searchQuery" placeholder="بحث (رقم، عميل)..."
+                class="w-full pr-10 pl-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all">
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/50 overflow-hidden">
+        @if (isLoading) {
+        <div class="flex justify-center py-16">
+            <div class="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+        } @else if (loadError) {
+        <div class="text-center py-16 px-6">
+            <lucide-icon [name]="FileText" class="size-12 text-red-200 mx-auto mb-4"></lucide-icon>
+            <p class="font-bold text-red-600 mb-1">تعذر تحميل المستندات</p>
+            <p class="text-sm text-slate-400 mb-4 max-w-md mx-auto">{{ loadError }}</p>
+            <button (click)="refresh()"
+                class="px-5 py-2 rounded-xl text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors">
+                إعادة المحاولة
+            </button>
+        </div>
+        } @else {
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-right">
+                <thead class="bg-slate-50/80 text-slate-500 text-xs font-bold">
+                    <tr>
+                        <th class="px-6 py-3.5">الرقم</th>
+                        <th class="px-6 py-3.5">التاريخ</th>
+                        <th class="px-6 py-3.5">العميل</th>
+                        <th class="px-6 py-3.5">الصافي</th>
+                        <th class="px-6 py-3.5">الضريبة</th>
+                        <th class="px-6 py-3.5">الخصم</th>
+                        <th class="px-6 py-3.5">البنود</th>
+                        <th class="px-6 py-3.5">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    @for (doc of filteredDocuments; track doc.code) {
+                    <!-- Main Row -->
+                    <tr class="hover:bg-blue-50/30 transition-colors cursor-pointer" (click)="toggleExpand(doc.code)">
+                        <td class="px-6 py-4">
+                            <span class="font-mono font-bold text-blue-600 text-sm">{{ doc.code }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">{{ formatApexDate(doc.invoiceDate) }}</td>
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-800 text-sm">{{ doc.customer.arabicName || '—' }}</p>
+                            <p class="text-xs text-slate-400">{{ doc.customer.code }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-800">{{ formatCurrency(doc.net) }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ formatCurrency(doc.totalVat) }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ formatCurrency(doc.totalDiscountValue) }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-600">
+                                <lucide-icon [name]="Package" class="size-3"></lucide-icon>
+                                {{ doc.items.length }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button (click)="$event.stopPropagation(); createOrderFromDoc(doc)"
+                                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm transition-all">
+                                <lucide-icon [name]="Plus" class="size-3.5"></lucide-icon>
+                                أمر تركيب
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Expanded Items Row -->
+                    @if (isExpanded(doc.code)) {
+                    <tr class="bg-blue-50/40">
+                        <td colspan="8" class="px-6 py-4">
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <lucide-icon [name]="Package" class="size-4 text-blue-600"></lucide-icon>
+                                    <h4 class="text-sm font-bold text-slate-800">بنود المستند ({{ doc.items.length }})
+                                    </h4>
+                                </div>
+                                @if (doc.customer) {
+                                <div
+                                    class="flex flex-wrap gap-4 mb-3 p-3 bg-white/60 rounded-xl border border-slate-100/50 text-xs text-slate-600">
+                                    <span><strong class="text-slate-700">العميل:</strong> {{
+                                        doc.customer.arabicName }}</span>
+                                    @if (doc.customer.phone) {
+                                    <span><strong class="text-slate-700">هاتف:</strong> {{ doc.customer.phone
+                                        }}</span>
+                                    }
+                                    @if (doc.customer.email) {
+                                    <span><strong class="text-slate-700">بريد:</strong> {{ doc.customer.email
+                                        }}</span>
+                                    }
+                                    @if (doc.customer.addressAr) {
+                                    <span><strong class="text-slate-700">عنوان:</strong> {{
+                                        doc.customer.addressAr }}</span>
+                                    }
+                                </div>
+                                }
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-right text-xs">
+                                        <thead class="text-slate-500 font-bold">
+                                            <tr>
+                                                <th class="px-3 py-2">كود الصنف</th>
+                                                <th class="px-3 py-2">الوصف</th>
+                                                <th class="px-3 py-2">الكمية</th>
+                                                <th class="px-3 py-2">السعر</th>
+                                                <th class="px-3 py-2">الخصم</th>
+                                                <th class="px-3 py-2">الضريبة</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100/70">
+                                            @for (item of doc.items; track item.itemCode + $index) {
+                                            <tr class="hover:bg-white/50">
+                                                <td class="px-3 py-2 font-mono text-blue-600">{{ item.itemCode }}
+                                                </td>
+                                                <td class="px-3 py-2 text-slate-700 font-medium">{{
+                                                    item.arabicName }}</td>
+                                                <td class="px-3 py-2 text-slate-600">{{ item.quantity }}</td>
+                                                <td class="px-3 py-2 text-slate-600">{{ formatCurrency(item.price)
+                                                    }}</td>
+                                                <td class="px-3 py-2 text-slate-500">{{
+                                                    formatCurrency(item.discountValue) }}</td>
+                                                <td class="px-3 py-2 text-slate-500">{{
+                                                    formatCurrency(item.vatValue) }}</td>
+                                            </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                    } @empty {
+                    <tr>
+                        <td colspan="8" class="py-16 text-center">
+                            <lucide-icon [name]="FileText" class="size-12 text-slate-200 mx-auto mb-4"></lucide-icon>
+                            <p class="font-medium text-slate-400">لا توجد {{ tabLabel }}</p>
+                            <p class="text-xs text-slate-400 mt-1">جرب تغيير الفلتر أو التاريخ</p>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer + Pagination -->
+        <div class="p-4 border-t border-slate-100/50 flex items-center justify-between flex-wrap gap-3">
+            <span class="text-sm text-slate-400">
+                صفحة {{ currentPage }} — {{ filteredDocuments.length }} سجل
+            </span>
+            <div class="flex items-center gap-2">
+                <button (click)="prevPage()" [disabled]="currentPage <= 1"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+                    <lucide-icon [name]="ChevronRight" class="size-4"></lucide-icon>
+                    السابق
+                </button>
+                <span
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold bg-blue-600 text-white">
+                    {{ currentPage }}
+                </span>
+                <button (click)="nextPage()" [disabled]="!hasMorePages"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors">
+                    التالي
+                    <lucide-icon [name]="ChevronLeft" class="size-4"></lucide-icon>
+                </button>
+            </div>
+        </div>
+        }
     </div>
 </div>

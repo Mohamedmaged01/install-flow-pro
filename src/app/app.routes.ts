@@ -11,7 +11,7 @@ import { ScanQR } from './pages/scan-qr/scan-qr';
 import { Reports } from './pages/reports/reports';
 import { Settings } from './pages/settings/settings';
 import { Tasks } from './pages/tasks/tasks';
-import { authGuard } from './auth.guard';
+import { authGuard, dashboardGuard, defaultRedirectGuard } from './auth.guard';
 
 
 export const routes: Routes = [
@@ -21,8 +21,8 @@ export const routes: Routes = [
         component: Layout,
         canActivate: [authGuard],
         children: [
-            { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-            { path: 'dashboard', component: Dashboard },
+            { path: '', canActivate: [defaultRedirectGuard], component: Dashboard, pathMatch: 'full' },
+            { path: 'dashboard', component: Dashboard, canActivate: [dashboardGuard] },
             { path: 'documents', component: Documents },
             { path: 'orders/create', component: OrderCreate },
             { path: 'orders/:id/edit', component: OrderCreate },

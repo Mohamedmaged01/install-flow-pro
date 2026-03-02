@@ -1,0 +1,10 @@
+{
+    "/apex-api": {
+        "target": "https://gate.erp-apex.com",
+        "secure": true,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/apex-api": ""
+        }
+    }
+}

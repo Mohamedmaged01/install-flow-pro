@@ -63,7 +63,8 @@
                 <option [value]="ApiPriority.Normal">🟢 عادي</option>
             </select>
 
-            <!-- My Tasks toggle -->
+            <!-- My Tasks toggle (hidden for Sales Rep) -->
+            @if (!isSalesRep()) {
             <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 whitespace-nowrap">
                 <div class="relative">
                     <input type="checkbox" [(ngModel)]="myTasksOnly" (ngModelChange)="onFilterChange()"
@@ -74,6 +75,7 @@
                 </div>
                 مهامي فقط
             </label>
+            }
         </div>
 
         @if (isLoading) {
@@ -91,7 +93,9 @@
                         <th class="px-6 py-3.5">المدينة</th>
                         <th class="px-6 py-3.5">الفرع / القسم</th>
                         <th class="px-6 py-3.5">الحالة</th>
+                        @if (!isSalesRep()) {
                         <th class="px-6 py-3.5">المهام</th>
+                        }
                         <th class="px-6 py-3.5">الموعد</th>
                         <th class="px-6 py-3.5">إجراء</th>
                     </tr>
@@ -115,7 +119,8 @@
                             </p>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-600">{{ order.city }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-500">#{{ order.branchId }} / #{{ order.departmentId }}
+                        <td class="px-6 py-4 text-sm text-slate-500">{{ getBranchName(order.branchId) }} / {{
+                            getDepartmentName(order.branchId, order.departmentId) }}
                         </td>
                         <td class="px-6 py-4">
                             <app-status-badge [status]="order.status"></app-status-badge>
@@ -125,13 +130,14 @@
                             <div class="flex items-center gap-1.5 text-sm" [class.text-red-500]="isOverdue(order)"
                                 [class.text-slate-500]="!isOverdue(order)">
                                 <lucide-icon [name]="ClockIcon" class="size-3.5"></lucide-icon>
-                                {{ order.scheduledDate.split('T')[0] }}
+                                {{ formatDateUTC3(order.scheduledDate) }}
                             </div>
                             } @else {
                             <span class="text-slate-400 text-sm">—</span>
                             }
                         </td>
                         <!-- Tasks column -->
+                        @if (!isSalesRep()) {
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">
                                 @for (task of getOrderTasks(order.id); track task.id) {
@@ -153,6 +159,7 @@
                                 }
                             </div>
                         </td>
+                        }
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-1.5">
                                 <button (click)="$event.stopPropagation(); viewOrder(order.id)"

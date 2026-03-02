@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrdersService } from '../../../services/orders.service';
 import { ApiOrder, ApiOrderStatus } from '../../../models/api-models';
+import { formatDateUTC3 } from '../../../utils/date-utils';
 
 @Component({
   selector: 'app-recent-orders',
@@ -38,13 +39,16 @@ export class RecentOrders implements OnInit {
     [ApiOrderStatus.Cancelled]: { bg: 'bg-red-50', text: 'text-red-700' },
   };
 
+  readonly formatDateUTC3 = formatDateUTC3;
+
   constructor(private ordersService: OrdersService, private router: Router) { }
 
   ngOnInit() {
     this.isLoading = true;
     this.ordersService.getAll().subscribe({
       next: (orders) => {
-        this.orders = orders.slice(0, 5);
+        // Sort by ID descending (newest first) then take top 5
+        this.orders = [...orders].sort((a, b) => b.id - a.id).slice(0, 5);
         this.isLoading = false;
       },
       error: () => { this.isLoading = false; },

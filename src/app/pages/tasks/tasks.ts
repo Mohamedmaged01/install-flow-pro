@@ -15,6 +15,7 @@ import {
     Clock, MapPin, Play, ChevronRight, AlertTriangle, Plus, QrCode
 } from 'lucide-angular';
 import { FormsModule } from '@angular/forms';
+import { getTimeAgoUTC3 } from '../../utils/date-utils';
 
 const TASK_STATUS_LABELS: Record<ApiTaskStatus, string> = {
     [ApiTaskStatus.Assigned]: 'مُسنَد',
@@ -187,12 +188,7 @@ export class Tasks implements OnInit {
     }
 
     getTimeAgo(timestamp: string): string {
-        const diff = Date.now() - new Date(timestamp).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 60) return `منذ ${mins} دقيقة`;
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return `منذ ${hours} ساعة`;
-        return `منذ ${Math.floor(hours / 24)} يوم`;
+        return getTimeAgoUTC3(timestamp);
     }
 
     // ─── Create Task ───

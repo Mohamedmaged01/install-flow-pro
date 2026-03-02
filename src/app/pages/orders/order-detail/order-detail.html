@@ -106,7 +106,7 @@
                             @if (order.scheduledDate) {
                             <div class="flex items-center gap-2 text-slate-500">
                                 <lucide-icon [name]="Clock" class="size-4"></lucide-icon>
-                                {{ order.scheduledDate.split('T')[0] }}
+                                {{ formatDateUTC3(order.scheduledDate) }}
                             </div>
                             }
                         </div>
@@ -159,7 +159,7 @@
                     <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                         <div>
                             <p class="font-bold text-slate-800 text-sm">فني: {{ task.technicianName }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ task.createdAt.split('T')[0] }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ formatDateUTC3(task.createdAt) }}</p>
                             @if (task.notes) {
                             <p class="text-xs text-slate-500 mt-1">{{ task.notes }}</p>
                             }
@@ -239,14 +239,15 @@
                     <div class="flex justify-between"><span class="text-slate-500">الحالة</span><span
                             class="font-bold text-slate-800">{{ STATUS_LABELS[order.status] }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">الفرع</span><span
-                            class="font-bold text-slate-800">#{{ order.branchId }}</span></div>
+                            class="font-bold text-slate-800">{{ branchName || '#' + order.branchId }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">القسم</span><span
-                            class="font-bold text-slate-800">#{{ order.departmentId }}</span></div>
+                            class="font-bold text-slate-800">{{ departmentName || '#' + order.departmentId }}</span>
+                    </div>
                     <div class="flex justify-between"><span class="text-slate-500">المدينة</span><span
                             class="font-bold text-slate-800">{{ order.city }}</span></div>
                     @if (order.scheduledDate) {
                     <div class="flex justify-between"><span class="text-slate-500">الموعد</span><span
-                            class="font-bold text-slate-800">{{ order.scheduledDate.split('T')[0] }}</span></div>
+                            class="font-bold text-slate-800">{{ formatDateUTC3(order.scheduledDate) }}</span></div>
                     }
                 </div>
             </div>

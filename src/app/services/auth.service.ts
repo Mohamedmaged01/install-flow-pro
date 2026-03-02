@@ -151,15 +151,21 @@ export class AuthService {
                             }
                         }
 
-                        // Build user from response
-                        const role = tokenData.role ? apiRoleToFrontend(tokenData.role as ApiRole) : UserRole.ADMIN;
+                        // Build user from response, falling back to JWT claims
+                        const jwtRole = claims?.['Role'] ?? claims?.['role'];
+                        const jwtName = claims?.['Name'] ?? claims?.['name'];
+                        const jwtEmail = claims?.['Email'] ?? claims?.['email'];
+                        const jwtDeptId = claims?.['DepartmentId'] ?? claims?.['departmentId'];
+
+                        const resolvedRole = tokenData.role || jwtRole;
+                        const role = resolvedRole ? apiRoleToFrontend(resolvedRole as ApiRole) : UserRole.ADMIN;
                         const user: User = {
                             id: userId,
-                            name: tokenData.name ?? tokenData.userName ?? 'مستخدم',
-                            email: tokenData.email ?? '',
+                            name: tokenData.name ?? tokenData.userName ?? jwtName ?? 'مستخدم',
+                            email: tokenData.email ?? jwtEmail ?? '',
                             phone: phoneOrEmail,
                             role: role,
-                            department: tokenData.departmentId ? String(tokenData.departmentId) : undefined,
+                            department: (tokenData.departmentId ?? jwtDeptId) ? String(tokenData.departmentId ?? jwtDeptId) : undefined,
                         };
 
                         console.log('[AuthService] Logged in user ID:', userId, 'Claims:', typeof token === 'string' ? this.decodeJwt(token) : null);

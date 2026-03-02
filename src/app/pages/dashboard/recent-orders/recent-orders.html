@@ -29,8 +29,7 @@
                     </span>
                 </div>
                 <p class="text-sm text-slate-700 font-medium truncate mt-0.5">عميل: {{ order.customerId }}</p>
-                <p class="text-xs text-slate-400">{{ order.city }} &bull; {{ order.scheduledDate ?
-                    order.scheduledDate.split('T')[0] : '&mdash;' }}</p>
+                <p class="text-xs text-slate-400">{{ order.city }} &bull; {{ formatDateUTC3(order.scheduledDate) }}</p>
             </div>
 
             <!-- Dept badge -->

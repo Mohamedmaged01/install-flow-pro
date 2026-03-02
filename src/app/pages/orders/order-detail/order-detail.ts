@@ -6,6 +6,8 @@ import { ToastService } from '../../../services/toast.service';
 import { OrdersService } from '../../../services/orders.service';
 import { TasksService } from '../../../services/tasks.service';
 import { DepartmentsService } from '../../../services/departments.service';
+import { BranchesService } from '../../../services/branches.service';
+import { formatDateUTC3, formatDateTimeUTC3, getTimeAgoUTC3 } from '../../../utils/date-utils';
 import {
     ApiOrder, ApiOrderStatus, ApiOrderHistoryEntry,
     ApiTask, ApiTaskStatus, AssignTaskDto, TaskStatusUpdateDto,
@@ -115,6 +117,14 @@ export class OrderDetail implements OnInit, AfterViewInit {
     private _role: UserRole | null = null;
     private _userId = 0;
 
+    // Branch & Department name resolution
+    branchName = '';
+    departmentName = '';
+
+    // Date helpers exposed to template
+    readonly formatDateUTC3 = formatDateUTC3;
+    readonly formatDateTimeUTC3 = formatDateTimeUTC3;
+
     constructor(
         private auth: AuthService,
         private route: ActivatedRoute,
@@ -123,6 +133,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         private ordersService: OrdersService,
         private tasksService: TasksService,
         private departmentsService: DepartmentsService,
+        private branchesService: BranchesService,
         private cdr: ChangeDetectorRef,
     ) { }
 
@@ -149,6 +160,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
                 if (this.order) {
                     this.loadHistory(id);
                     this.loadTasks();
+                    if (this.order.branchId) this.loadBranchDeptNames(this.order.branchId, this.order.departmentId);
                     if (this.order.departmentId) this.loadTechnicians(this.order.departmentId);
                     if (this.order.qrToken) this.generateQRImage(this.order.qrToken);
                 }
@@ -163,7 +175,13 @@ export class OrderDetail implements OnInit, AfterViewInit {
 
     loadHistory(orderId: number) {
         this.ordersService.getHistory(orderId).subscribe({
-            next: (h) => { this.history = h; this.cdr.markForCheck(); },
+            next: (h) => {
+                // Sort history by timestamp ascending (oldest first for timeline)
+                this.history = (h || []).sort((a, b) =>
+                    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                );
+                this.cdr.markForCheck();
+            },
             error: () => { },
         });
     }
@@ -339,9 +357,11 @@ export class OrderDetail implements OnInit, AfterViewInit {
 
     get apiRole(): ApiRole {
         switch (this.role) {
+            case UserRole.SALES_REP: return ApiRole.SalesRepresentative;
             case UserRole.SALES_MANAGER: return ApiRole.SalesManager;
             case UserRole.SUPERVISOR: return ApiRole.Supervisor;
             case UserRole.TECHNICIAN: return ApiRole.Technician;
+            case UserRole.ADMIN: return ApiRole.Admin;
             default: return ApiRole.Admin;
         }
     }
@@ -566,13 +586,28 @@ export class OrderDetail implements OnInit, AfterViewInit {
         });
     }
 
+    // ─── Branch / Department resolution ───
+    loadBranchDeptNames(branchId: number, departmentId: number) {
+        this.branchesService.getAll().subscribe({
+            next: (branches) => {
+                const branch = branches.find(b => b.id === branchId);
+                this.branchName = branch?.name ?? `#${branchId}`;
+                this.cdr.markForCheck();
+            },
+            error: () => { this.branchName = `#${branchId}`; },
+        });
+        this.departmentsService.getByBranch(branchId).subscribe({
+            next: (depts) => {
+                const dept = depts.find(d => d.id === departmentId);
+                this.departmentName = dept?.name ?? `#${departmentId}`;
+                this.cdr.markForCheck();
+            },
+            error: () => { this.departmentName = `#${departmentId}`; },
+        });
+    }
+
     getTimeAgo(timestamp: string): string {
-        const diff = Date.now() - new Date(timestamp).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 60) return `منذ ${mins} دقيقة`;
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return `منذ ${hours} ساعة`;
-        return `منذ ${Math.floor(hours / 24)} يوم`;
+        return getTimeAgoUTC3(timestamp);
     }
 
     editOrder() {

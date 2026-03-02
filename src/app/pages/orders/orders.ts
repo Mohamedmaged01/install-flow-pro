@@ -5,10 +5,12 @@ import { AuthService } from '../../services/auth.service';
 import { OrdersService } from '../../services/orders.service';
 import { TasksService } from '../../services/tasks.service';
 import { DepartmentsService } from '../../services/departments.service';
+import { BranchesService } from '../../services/branches.service';
 import { ToastService } from '../../services/toast.service';
-import { ApiOrder, ApiOrderStatus, ApiPriority, AssignTaskDto, ApiRole, ApiTask, ApiTaskStatus, TaskStatusUpdateDto } from '../../models/api-models';
+import { ApiOrder, ApiOrderStatus, ApiPriority, AssignTaskDto, ApiRole, ApiTask, ApiTaskStatus, TaskStatusUpdateDto, ApiBranch, ApiDepartment } from '../../models/api-models';
 import { UserRole } from '../../models';
 import { StatusBadge } from '../../components/status-badge/status-badge';
+import { formatDateUTC3, getTimeAgoUTC3 } from '../../utils/date-utils';
 import {
     LucideAngularModule, Search, Filter, Eye, FileText, RefreshCw,
     Plus, AlertTriangle, Clock, ChevronRight, ChevronLeft
@@ -95,11 +97,19 @@ export class Orders implements OnInit {
     currentPage = 1;
     readonly pageSize = PAGE_SIZE;
 
+    // Branch & Department name maps
+    branchMap: Record<number, string> = {};
+    departmentMap: Record<number, string> = {};
+
+    // Date helpers exposed to template
+    readonly formatDateUTC3 = formatDateUTC3;
+
     constructor(
         public auth: AuthService,
         private ordersApi: OrdersService,
         private tasksService: TasksService,
         private departmentsService: DepartmentsService,
+        private branchesService: BranchesService,
         private toast: ToastService,
         private router: Router,
     ) { }
@@ -112,7 +122,11 @@ export class Orders implements OnInit {
             this.myTasksOnly = true;
         }
         this.loadOrders();
-        this.loadTasks();
+        // Sales Reps don't have access to Tasks API (403)
+        if (!this.isSalesRep()) {
+            this.loadTasks();
+        }
+        this.loadBranchesAndDepartments();
     }
 
     loadOrders() {
@@ -148,6 +162,13 @@ export class Orders implements OnInit {
 
     get filteredOrders(): ApiOrder[] {
         let orders = this.allOrders;
+
+        // Sales Reps only see Draft + PendingSalesManager orders
+        if (this.isSalesRep()) {
+            orders = orders.filter(o =>
+                o.status === ApiOrderStatus.Draft || o.status === ApiOrderStatus.PendingSalesManager
+            );
+        }
 
         // My Tasks filter: filter by createdByUserId matching current user
         if (this.myTasksOnly) {
@@ -236,9 +257,47 @@ export class Orders implements OnInit {
         return this.auth.userRole() === UserRole.TECHNICIAN;
     }
 
+    isSalesRep(): boolean {
+        return this.auth.userRole() === UserRole.SALES_REP;
+    }
+
     isSupervisorOrAbove(): boolean {
         const role = this.auth.userRole();
         return role === UserRole.SUPERVISOR || role === UserRole.ADMIN || role === UserRole.SALES_MANAGER;
+    }
+
+    // ─── Branch / Department name resolution ───
+    loadBranchesAndDepartments() {
+        this.branchesService.getAll().subscribe({
+            next: (branches) => {
+                for (const b of branches) {
+                    this.branchMap[b.id] = b.name;
+                }
+            },
+            error: () => { },
+        });
+    }
+
+    getBranchName(id: number): string {
+        return this.branchMap[id] ?? `#${id}`;
+    }
+
+    getDepartmentName(branchId: number, deptId: number): string {
+        // If we already resolved this department, return it
+        if (this.departmentMap[deptId]) return this.departmentMap[deptId];
+        // Otherwise trigger a load (will resolve on next render)
+        if (!this.departmentMap[deptId]) {
+            this.departmentMap[deptId] = `#${deptId}`; // placeholder
+            this.departmentsService.getByBranch(branchId).subscribe({
+                next: (depts) => {
+                    for (const d of depts) {
+                        this.departmentMap[d.id] = d.name;
+                    }
+                },
+                error: () => { },
+            });
+        }
+        return this.departmentMap[deptId];
     }
 
     viewOrder(id: number) {

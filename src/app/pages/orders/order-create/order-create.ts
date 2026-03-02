@@ -65,10 +65,14 @@ export class OrderCreate implements OnInit {
 
     ngOnInit() {
         // Pre-populate from query params if navigating from documents
-        const quotationId = this.route.snapshot.queryParams['quotationId'];
-        const customerId = this.route.snapshot.queryParams['customerId'];
-        if (quotationId) this.form.quotationId = quotationId;
-        if (customerId) this.form.customerId = customerId;
+        const qp = this.route.snapshot.queryParams;
+        if (qp['quotationId']) this.form.quotationId = qp['quotationId'];
+        if (qp['invoiceId']) this.form.invoiceId = qp['invoiceId'];
+        if (qp['customerId']) this.form.customerId = qp['customerId'];
+        // APEX-specific: show a toast if pre-populated from APEX document
+        if (qp['apexCode']) {
+            this.toast.info('APEX', `تم تحميل بيانات المستند ${qp['apexCode']}`);
+        }
 
         this.branchesApi.getAll().subscribe({
             next: (branches) => {
