@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { OrdersService } from '../../../services/orders.service';
 import { ApiOrder, ApiOrderStatus } from '../../../models/api-models';
@@ -10,6 +10,7 @@ import { formatDateUTC3 } from '../../../utils/date-utils';
   imports: [],
   templateUrl: './recent-orders.html',
   styles: ``,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecentOrders implements OnInit {
   orders: ApiOrder[] = [];
@@ -41,17 +42,21 @@ export class RecentOrders implements OnInit {
 
   readonly formatDateUTC3 = formatDateUTC3;
 
-  constructor(private ordersService: OrdersService, private router: Router) { }
+  constructor(private ordersService: OrdersService, private router: Router, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.isLoading = true;
+    this.cdr.markForCheck();
     this.ordersService.getAll().subscribe({
       next: (orders) => {
-        // Sort by ID descending (newest first) then take top 5
         this.orders = [...orders].sort((a, b) => b.id - a.id).slice(0, 5);
         this.isLoading = false;
+        this.cdr.markForCheck();
       },
-      error: () => { this.isLoading = false; },
+      error: () => {
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      },
     });
   }
 
