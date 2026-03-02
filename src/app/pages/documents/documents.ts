@@ -3,7 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApexDocument, ApexResponse } from '../../models/apex-models';
-import { environment } from '../../../environments/environment';
 import { formatDateUTC3 } from '../../utils/date-utils';
 import {
     LucideAngularModule, FileText, Receipt, Plus, Search, RefreshCw,
@@ -78,7 +77,6 @@ export class Documents implements OnInit {
         const endpoint = this.activeTab === 'invoices' ? '/api/invoices' : '/api/offers';
 
         let params = new HttpParams()
-            .set('PassKey', environment.apexPassKey)
             .set('PageNumber', this.currentPage)
             .set('PageSize', 20);
 
