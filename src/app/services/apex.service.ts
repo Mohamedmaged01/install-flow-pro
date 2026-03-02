@@ -25,11 +25,11 @@ export class ApexService {
     // ─── Public API ───
 
     getInvoices(page = 1, dateFrom?: string, dateTo?: string): Observable<ApexDocument[]> {
-        return this.apexGet<ApexDocument[]>('InvoiceServices/GetInvoices', page, dateFrom, dateTo);
+        return this.apexGet<ApexDocument[]>('/api/invoices', page, dateFrom, dateTo);
     }
 
     getOfferPrices(page = 1, dateFrom?: string, dateTo?: string): Observable<ApexDocument[]> {
-        return this.apexGet<ApexDocument[]>('OfferPricesController/getOfferPrice', page, dateFrom, dateTo);
+        return this.apexGet<ApexDocument[]>('/api/offers', page, dateFrom, dateTo);
     }
 
     // ─── Internal ───
@@ -52,7 +52,7 @@ export class ApexService {
         if (dateTo) params = params.set('DateTo', dateTo);
 
         return this.http
-            .get<ApexResponse<T>>(`${environment.apexUrl}/${path}`, { params })
+            .get<ApexResponse<T>>(path, { params })
             .pipe(
                 map(res => {
                     if (!res.isSuccess) {
