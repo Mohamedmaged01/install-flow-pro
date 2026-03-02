@@ -44,6 +44,7 @@ export class ApexService {
         }
 
         let params = new HttpParams()
+            .set('PassKey', environment.apexPassKey)
             .set('PageNumber', page)
             .set('PageSize', 20);
 

@@ -1,10 +1,10 @@
 // Vercel Serverless Function — APEX ERP Proxy
-// Keeps PassKey server-side and forwards requests to gate.erp-apex.com
+// Keeps PassKey server-side, forwards requests to gate.erp-apex.com
 
 const APEX_BASE = 'https://gate.erp-apex.com';
 const PASS_KEY = '#@$DSFW%#@5423asfsa3252534$#%$#&^#@@!#%WEDFsdfsdgfascxvxvxwjsgdnhtecvxzterujhrjn';
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,18 +14,18 @@ export default async function handler(req, res) {
     }
 
     // The [...path] catch-all gives us the APEX endpoint path
-    const { path } = req.query;
-    const apexPath = Array.isArray(path) ? path.join('/') : path;
+    const pathSegments = req.query.path;
+    const apexPath = Array.isArray(pathSegments) ? pathSegments.join('/') : (pathSegments || '');
 
-    // Build query string: start with PassKey, then add remaining params
+    // Build query string manually to avoid double-encoding
     const queryParts = ['PassKey=' + encodeURIComponent(PASS_KEY)];
     for (const [key, val] of Object.entries(req.query)) {
-        if (key !== 'path' && val) {
+        if (key !== 'path' && val !== undefined && val !== '') {
             queryParts.push(encodeURIComponent(key) + '=' + encodeURIComponent(String(val)));
         }
     }
 
-    const url = `${APEX_BASE}/${apexPath}?${queryParts.join('&')}`;
+    const url = APEX_BASE + '/' + apexPath + '?' + queryParts.join('&');
 
     try {
         const apexRes = await fetch(url, {
@@ -33,7 +33,13 @@ export default async function handler(req, res) {
             headers: { 'Content-Type': 'application/json' },
         });
 
-        const data = await apexRes.json();
+        const text = await apexRes.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            data = { isSuccess: false, message: 'Invalid JSON from APEX', data: null };
+        }
 
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
@@ -44,8 +50,8 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         return res.status(500).json({
             isSuccess: false,
-            message: `Proxy error: ${err.message}`,
+            message: 'Proxy error: ' + (err.message || 'Unknown error'),
             data: null,
         });
     }
-}
+};
