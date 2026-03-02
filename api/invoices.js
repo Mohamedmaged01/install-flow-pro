@@ -9,12 +9,11 @@ module.exports = async function handler(req, res) {
         return res.status(200).end();
     }
 
-    const pn = req.query.PageNumber || req.query.PassKey ? (req.query.PageNumber || '1') : '1';
+    const pn = req.query.PageNumber || '1';
     const ps = req.query.PageSize || '20';
     const df = req.query.DateFrom;
     const dt = req.query.DateTo;
 
-    // Build URL with encodeURIComponent (matches the format that works)
     let url = APEX_URL + '?PassKey=' + encodeURIComponent(PASS_KEY)
         + '&PageNumber=' + encodeURIComponent(pn)
         + '&PageSize=' + encodeURIComponent(ps);
@@ -24,7 +23,11 @@ module.exports = async function handler(req, res) {
     try {
         const r = await fetch(url, {
             method: 'GET',
-            headers: { 'Accept': 'application/json' },
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'InstallFlowPro/1.0',
+            },
         });
         const data = await r.text();
         res.setHeader('Access-Control-Allow-Origin', '*');
