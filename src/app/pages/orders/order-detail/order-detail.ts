@@ -1,4 +1,5 @@
 ﻿import { Component, OnInit, AfterViewInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
@@ -13,7 +14,9 @@ import {
     ApiTask, ApiTaskStatus, AssignTaskDto, TaskStatusUpdateDto,
     ApiRole, OrderActionDto,
 } from '../../../models/api-models';
+import { ApexDocument, ApexResponse } from '../../../models/apex-models';
 import { UserRole } from '../../../models';
+import { environment } from '../../../../environments/environment';
 import { StatusBadge } from '../../../components/status-badge/status-badge';
 import {
     LucideAngularModule, ArrowRight, Clock, MapPin, User, Phone, Mail,
@@ -121,6 +124,11 @@ export class OrderDetail implements OnInit, AfterViewInit {
     branchName = '';
     departmentName = '';
 
+    // APEX enrichment
+    apexDoc: ApexDocument | null = null;
+    customerName = '—';
+    customerCode = '';
+
     // Date helpers exposed to template
     readonly formatDateUTC3 = formatDateUTC3;
     readonly formatDateTimeUTC3 = formatDateTimeUTC3;
@@ -135,6 +143,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
         private departmentsService: DepartmentsService,
         private branchesService: BranchesService,
         private cdr: ChangeDetectorRef,
+        private http: HttpClient,
     ) { }
 
     ngOnInit() {
@@ -163,6 +172,7 @@ export class OrderDetail implements OnInit, AfterViewInit {
                     if (this.order.branchId) this.loadBranchDeptNames(this.order.branchId, this.order.departmentId);
                     if (this.order.departmentId) this.loadTechnicians(this.order.departmentId);
                     if (this.order.qrToken) this.generateQRImage(this.order.qrToken);
+                    this.loadApexDocument();
                 }
             },
             error: () => {
@@ -612,5 +622,37 @@ export class OrderDetail implements OnInit, AfterViewInit {
 
     editOrder() {
         if (this.order) this.router.navigate(['/orders', this.order.id, 'edit']);
+    }
+
+    // ─── APEX enrichment ───
+    loadApexDocument() {
+        const code = this.order?.quotationId || this.order?.invoiceId;
+        if (!code) return;
+
+        const path = this.order?.invoiceId
+            ? 'InvoiceServices/GetInvoices'
+            : 'OfferPricesController/getOfferPrice';
+
+        const params = new HttpParams()
+            .set('PassKey', environment.apexPassKey)
+            .set('PageNumber', 1)
+            .set('PageSize', 20);
+
+        this.http.get<ApexResponse<ApexDocument[]>>(
+            `${environment.apexUrl}/${path}`, { params }
+        ).subscribe({
+            next: (res) => {
+                if (res.isSuccess && res.data) {
+                    const doc = res.data.find(d => d.code === code);
+                    if (doc) {
+                        this.apexDoc = doc;
+                        this.customerName = doc.customer?.arabicName || this.order?.customerId || '—';
+                        this.customerCode = doc.customer?.code || '';
+                        this.cdr.markForCheck();
+                    }
+                }
+            },
+            error: () => { },
+        });
     }
 }

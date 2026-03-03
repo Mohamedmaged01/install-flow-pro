@@ -114,27 +114,20 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <p class="font-bold text-slate-800 text-sm">{{ order.customerId || '—' }}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">{{ order.quotationId || order.invoiceId || '' }}
-                            </p>
+                            <p class="font-bold text-slate-800 text-sm">{{ getCustomerName(order) }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ getDocRef(order) }}</p>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-600">{{ order.city }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-500">{{ getBranchName(order.branchId) }} / {{
-                            getDepartmentName(order.branchId, order.departmentId) }}
+                        <td class="px-6 py-4 text-sm text-slate-500">
+                            @if (order.branchId) {
+                            {{ getBranchName(order.branchId) }} / {{ getDepartmentName(order.branchId,
+                            order.departmentId) }}
+                            } @else {
+                            <span class="text-slate-300">—</span>
+                            }
                         </td>
                         <td class="px-6 py-4">
                             <app-status-badge [status]="order.status"></app-status-badge>
-                        </td>
-                        <td class="px-6 py-4">
-                            @if (order.scheduledDate) {
-                            <div class="flex items-center gap-1.5 text-sm" [class.text-red-500]="isOverdue(order)"
-                                [class.text-slate-500]="!isOverdue(order)">
-                                <lucide-icon [name]="ClockIcon" class="size-3.5"></lucide-icon>
-                                {{ formatDateUTC3(order.scheduledDate) }}
-                            </div>
-                            } @else {
-                            <span class="text-slate-400 text-sm">—</span>
-                            }
                         </td>
                         <!-- Tasks column -->
                         @if (!isSalesRep()) {
@@ -160,6 +153,17 @@
                             </div>
                         </td>
                         }
+                        <td class="px-6 py-4">
+                            @if (order.scheduledDate) {
+                            <div class="flex items-center gap-1.5 text-sm" [class.text-red-500]="isOverdue(order)"
+                                [class.text-slate-500]="!isOverdue(order)">
+                                <lucide-icon [name]="ClockIcon" class="size-3.5"></lucide-icon>
+                                {{ formatDateUTC3(order.scheduledDate) }}
+                            </div>
+                            } @else {
+                            <span class="text-slate-400 text-sm">—</span>
+                            }
+                        </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-1.5">
                                 <button (click)="$event.stopPropagation(); viewOrder(order.id)"

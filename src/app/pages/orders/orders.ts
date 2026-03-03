@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -8,9 +9,11 @@ import { DepartmentsService } from '../../services/departments.service';
 import { BranchesService } from '../../services/branches.service';
 import { ToastService } from '../../services/toast.service';
 import { ApiOrder, ApiOrderStatus, ApiPriority, AssignTaskDto, ApiRole, ApiTask, ApiTaskStatus, TaskStatusUpdateDto, ApiBranch, ApiDepartment } from '../../models/api-models';
+import { ApexDocument, ApexResponse } from '../../models/apex-models';
 import { UserRole } from '../../models';
 import { StatusBadge } from '../../components/status-badge/status-badge';
 import { formatDateUTC3, getTimeAgoUTC3 } from '../../utils/date-utils';
+import { environment } from '../../../environments/environment';
 import {
     LucideAngularModule, Search, Filter, Eye, FileText, RefreshCw,
     Plus, AlertTriangle, Clock, ChevronRight, ChevronLeft
@@ -84,7 +87,6 @@ export class Orders implements OnInit {
     myTasksOnly = false;
 
     // Snapshot of current user ID — set once in ngOnInit to avoid NG0100
-    // (auth signal updating after change detection when restoring session)
     currentUserId = '0';
 
     // Data
@@ -92,6 +94,9 @@ export class Orders implements OnInit {
     allTasks: ApiTask[] = [];
     tasksByOrder: Record<number, ApiTask[]> = {};
     isLoading = false;
+
+    // ─── APEX enrichment ───
+    apexDocMap: Record<string, ApexDocument> = {};
 
     // Pagination
     currentPage = 1;
@@ -112,21 +117,20 @@ export class Orders implements OnInit {
         private branchesService: BranchesService,
         private toast: ToastService,
         private router: Router,
+        private http: HttpClient,
     ) { }
 
     ngOnInit() {
-        // Snapshot user ID as a plain property to avoid NG0100
         this.currentUserId = this.auth.user()?.id ?? '0';
-        // Technicians default to "My Tasks" view
         if (this.auth.userRole() === UserRole.TECHNICIAN) {
             this.myTasksOnly = true;
         }
         this.loadOrders();
-        // Sales Reps don't have access to Tasks API (403)
         if (!this.isSalesRep()) {
             this.loadTasks();
         }
         this.loadBranchesAndDepartments();
+        this.loadApexDocuments();
     }
 
     loadOrders() {
@@ -145,7 +149,6 @@ export class Orders implements OnInit {
         this.tasksService.getAll().subscribe({
             next: (tasks) => {
                 this.allTasks = tasks;
-                // Group by orderId for O(1) lookup in template
                 this.tasksByOrder = tasks.reduce((acc, t) => {
                     if (!acc[t.orderId]) acc[t.orderId] = [];
                     acc[t.orderId].push(t);
@@ -156,6 +159,64 @@ export class Orders implements OnInit {
         });
     }
 
+    // ─── APEX enrichment: load offers + invoices and build a lookup map ───
+    loadApexDocuments() {
+        this.loadApexPage('OfferPricesController/getOfferPrice', 1);
+        this.loadApexPage('InvoiceServices/GetInvoices', 1);
+    }
+
+    private loadApexPage(path: string, page: number) {
+        const params = new HttpParams()
+            .set('PassKey', environment.apexPassKey)
+            .set('PageNumber', page)
+            .set('PageSize', 20);
+
+        this.http.get<ApexResponse<ApexDocument[]>>(
+            `${environment.apexUrl}/${path}`, { params }
+        ).subscribe({
+            next: (res) => {
+                if (res.isSuccess && res.data) {
+                    for (const doc of res.data) {
+                        this.apexDocMap[doc.code] = doc;
+                    }
+                    // If we got a full page, load the next one
+                    if (res.data.length >= 20) {
+                        this.loadApexPage(path, page + 1);
+                    }
+                }
+            },
+            error: () => { },
+        });
+    }
+
+    /** Get the APEX document for an order (by quotationId or invoiceId) */
+    getApexDoc(order: ApiOrder): ApexDocument | null {
+        if (order.quotationId && this.apexDocMap[order.quotationId]) {
+            return this.apexDocMap[order.quotationId];
+        }
+        if (order.invoiceId && this.apexDocMap[order.invoiceId]) {
+            return this.apexDocMap[order.invoiceId];
+        }
+        return null;
+    }
+
+    /** Get customer name from APEX, falling back to order.customerId */
+    getCustomerName(order: ApiOrder): string {
+        const doc = this.getApexDoc(order);
+        return doc?.customer?.arabicName || order.customerId || '—';
+    }
+
+    /** Get customer code from APEX */
+    getCustomerCode(order: ApiOrder): string {
+        const doc = this.getApexDoc(order);
+        return doc?.customer?.code || '';
+    }
+
+    /** Get the APEX document reference label */
+    getDocRef(order: ApiOrder): string {
+        return order.quotationId || order.invoiceId || '';
+    }
+
     getOrderTasks(orderId: number): ApiTask[] {
         return this.tasksByOrder[orderId] ?? [];
     }
@@ -163,14 +224,12 @@ export class Orders implements OnInit {
     get filteredOrders(): ApiOrder[] {
         let orders = this.allOrders;
 
-        // Sales Reps only see Draft + PendingSalesManager orders
         if (this.isSalesRep()) {
             orders = orders.filter(o =>
                 o.status === ApiOrderStatus.Draft || o.status === ApiOrderStatus.PendingSalesManager
             );
         }
 
-        // My Tasks filter: filter by createdByUserId matching current user
         if (this.myTasksOnly) {
             const userId = this.currentUserId;
             if (userId && userId !== '0') {
@@ -194,7 +253,7 @@ export class Orders implements OnInit {
             const q = this.searchQuery.trim().toLowerCase();
             orders = orders.filter(o =>
                 String(o.id).includes(q) ||
-                (o.customerId ?? '').toLowerCase().includes(q) ||
+                this.getCustomerName(o).toLowerCase().includes(q) ||
                 (o.city ?? '').toLowerCase().includes(q) ||
                 (o.quotationId ?? '').toLowerCase().includes(q)
             );
@@ -215,10 +274,9 @@ export class Orders implements OnInit {
     get pages(): number[] {
         const total = this.totalPages;
         if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-        // Windowed pagination
         const cur = this.currentPage;
         const pages: number[] = [1];
-        if (cur > 3) pages.push(-1); // ellipsis
+        if (cur > 3) pages.push(-1);
         for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i);
         if (cur < total - 2) pages.push(-1);
         pages.push(total);
@@ -283,11 +341,9 @@ export class Orders implements OnInit {
     }
 
     getDepartmentName(branchId: number, deptId: number): string {
-        // If we already resolved this department, return it
         if (this.departmentMap[deptId]) return this.departmentMap[deptId];
-        // Otherwise trigger a load (will resolve on next render)
         if (!this.departmentMap[deptId]) {
-            this.departmentMap[deptId] = `#${deptId}`; // placeholder
+            this.departmentMap[deptId] = `#${deptId}`;
             this.departmentsService.getByBranch(branchId).subscribe({
                 next: (depts) => {
                     for (const d of depts) {
@@ -350,7 +406,7 @@ export class Orders implements OnInit {
                 this.isSubmittingTask = false;
                 this.showQuickTaskModal = false;
                 this.toast.success('تم الإنشاء', `تم تعيين مهمة للأمر #${this.quickTaskForm.orderId}`);
-                this.loadTasks(); // refresh the task badges
+                this.loadTasks();
             },
             error: () => { this.isSubmittingTask = false; },
         });

@@ -76,4 +76,3 @@ export class RecentOrders implements OnInit {
     this.router.navigate(['/jobs']);
   }
 }
-

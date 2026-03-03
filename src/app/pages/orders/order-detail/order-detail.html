@@ -11,7 +11,8 @@
                 <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">أمر #{{ order.id }}</h2>
                 <app-status-badge [status]="order.status"></app-status-badge>
             </div>
-            <p class="text-sm text-slate-400 mt-0.5">عميل: {{ order.customerId }} • عرض سعر: {{ order.quotationId }}</p>
+            <p class="text-sm text-slate-400 mt-0.5">عميل: {{ customerName }} • عرض سعر: {{ order.quotationId || '—' }}
+            </p>
         </div>
 
         <!-- Role-based action buttons -->
@@ -88,7 +89,9 @@
                             بيانات العميل
                         </h3>
                         <div class="space-y-2 text-sm text-slate-600">
-                            <p><span class="font-bold text-slate-700">رقم العميل:</span> {{ order.customerId }}</p>
+                            <p><span class="font-bold text-slate-700">اسم العميل:</span> {{ customerName }}</p>
+                            <p><span class="font-bold text-slate-700">رقم العميل:</span> {{ customerCode ||
+                                order.customerId || '—' }}</p>
                             <p><span class="font-bold text-slate-700">رقم الفاتورة:</span> {{ order.invoiceId || '—' }}
                             </p>
                             <p><span class="font-bold text-slate-700">عرض السعر:</span> {{ order.quotationId || '—' }}
@@ -239,12 +242,14 @@
                     <div class="flex justify-between"><span class="text-slate-500">الحالة</span><span
                             class="font-bold text-slate-800">{{ STATUS_LABELS[order.status] }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">الفرع</span><span
-                            class="font-bold text-slate-800">{{ branchName || '#' + order.branchId }}</span></div>
+                            class="font-bold text-slate-800">{{ branchName || (order.branchId ? '#' + order.branchId :
+                            '—') }}</span></div>
                     <div class="flex justify-between"><span class="text-slate-500">القسم</span><span
-                            class="font-bold text-slate-800">{{ departmentName || '#' + order.departmentId }}</span>
+                            class="font-bold text-slate-800">{{ departmentName || (order.departmentId ? '#' +
+                            order.departmentId : '—') }}</span>
                     </div>
                     <div class="flex justify-between"><span class="text-slate-500">المدينة</span><span
-                            class="font-bold text-slate-800">{{ order.city }}</span></div>
+                            class="font-bold text-slate-800">{{ order.city || '—' }}</span></div>
                     @if (order.scheduledDate) {
                     <div class="flex justify-between"><span class="text-slate-500">الموعد</span><span
                             class="font-bold text-slate-800">{{ formatDateUTC3(order.scheduledDate) }}</span></div>

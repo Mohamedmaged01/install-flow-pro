@@ -1,18 +1,11 @@
 /** @type {import('@angular/build').DevServerProxyConfig} */
 const PROXY_CONFIG = {
-    '/api/offers': {
+    '/apex-api': {
         target: 'https://gate.erp-apex.com',
         secure: true,
         changeOrigin: true,
-        pathRewrite: { '^/api/offers': '/OfferPricesController/getOfferPrice' },
-        rewrite: (path) => path.replace('/api/offers', '/OfferPricesController/getOfferPrice'),
-    },
-    '/api/invoices': {
-        target: 'https://gate.erp-apex.com',
-        secure: true,
-        changeOrigin: true,
-        pathRewrite: { '^/api/invoices': '/InvoiceServices/GetInvoices' },
-        rewrite: (path) => path.replace('/api/invoices', '/InvoiceServices/GetInvoices'),
+        pathRewrite: { '^/apex-api': '' },
+        rewrite: (path) => path.replace(/^\/apex-api/, ''),
     },
 };
 
